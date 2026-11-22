@@ -1,0 +1,986 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guia de Estudo – Compiladores (2º Bim.)</title>
+<style>
+:root{
+  --bg:#fbfaf7; --surface:#ffffff; --ink:#1b2430; --muted:#5b6675; --line:#e2dfd7;
+  --accent:#1f5f8b; --accent-soft:#e6f0f7; --warn:#a8470f; --warn-soft:#fbeee4;
+  --ok:#2c6e49; --ok-soft:#e5f2ea; --code-bg:#f2f0ea; --shadow:0 1px 2px rgba(20,30,40,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#14181d; --surface:#1b2128; --ink:#e7eaee; --muted:#9aa5b3; --line:#2c343e;
+    --accent:#7db6e0; --accent-soft:#1d2e3b; --warn:#f0a76f; --warn-soft:#33261c;
+    --ok:#7ccf9d; --ok-soft:#1b2e24; --code-bg:#222a33; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14181d; --surface:#1b2128; --ink:#e7eaee; --muted:#9aa5b3; --line:#2c343e;
+  --accent:#7db6e0; --accent-soft:#1d2e3b; --warn:#f0a76f; --warn-soft:#33261c;
+  --ok:#7ccf9d; --ok-soft:#1b2e24; --code-bg:#222a33; --shadow:none;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+a{color:var(--accent)}
+header.top{position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
+.top-in{max-width:980px;margin:0 auto;padding:8px 16px}
+.top-row{display:flex;align-items:center;gap:12px;justify-content:space-between}
+.brand{font-weight:700;font-size:15px;white-space:nowrap}
+.progress{flex:1;max-width:260px;height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.progress>i{display:block;height:100%;width:0;background:var(--ok);transition:width .3s}
+.ptxt{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.theme{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:8px;padding:4px 10px;font:inherit;font-size:13px;cursor:pointer}
+nav.chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:thin}
+nav.chips a{flex:none;text-decoration:none;color:var(--ink);font-size:13.5px;padding:4px 11px;border:1px solid var(--line);border-radius:99px;background:var(--bg)}
+nav.chips a:hover,nav.chips a.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+main{max-width:980px;margin:0 auto;padding:20px 16px 80px}
+h1{font-size:30px;line-height:1.2;margin:10px 0 6px}
+h2{font-size:24px;margin:0 0 4px;line-height:1.25}
+h3{font-size:18px;margin:26px 0 8px}
+h4{font-size:15px;margin:18px 0 6px;color:var(--accent)}
+p{margin:0 0 12px}
+.lead{color:var(--muted);font-size:17px;max-width:70ch}
+section.blk{margin-top:44px;padding-top:6px;border-top:2px solid var(--line)}
+.tag{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);padding:2px 9px;border-radius:99px;margin-bottom:8px}
+.src{font-size:13.5px;color:var(--muted);margin:2px 0 14px}
+.src code{font-size:12.5px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow)}
+.card h4{margin-top:0}
+.note,.warn,.ok{border-radius:10px;padding:11px 14px;margin:14px 0;font-size:15px}
+.note{background:var(--accent-soft);border-left:4px solid var(--accent)}
+.warn{background:var(--warn-soft);border-left:4px solid var(--warn)}
+.ok{background:var(--ok-soft);border-left:4px solid var(--ok)}
+.note b:first-child,.warn b:first-child,.ok b:first-child{display:block;margin-bottom:2px}
+table{border-collapse:collapse;width:100%;margin:10px 0 16px;font-size:14.5px;background:var(--surface)}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{background:var(--accent-soft);font-weight:600}
+.tw{overflow-x:auto}
+code,pre{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:13.5px}
+code{background:var(--code-bg);padding:1px 5px;border-radius:4px}
+pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;line-height:1.45;margin:8px 0 14px;tab-size:4}
+pre code{background:none;padding:0}
+ul,ol{margin:0 0 12px;padding-left:22px}
+li{margin:3px 0}
+.steps{counter-reset:s;list-style:none;padding:0}
+.steps li{counter-increment:s;position:relative;padding:4px 0 4px 36px;margin:6px 0}
+.steps li::before{content:counter(s);position:absolute;left:0;top:3px;width:25px;height:25px;border-radius:50%;background:var(--accent);color:var(--bg);font-weight:700;font-size:13px;display:grid;place-items:center}
+details.q{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin:7px 0;box-shadow:var(--shadow)}
+details.q>summary{cursor:pointer;padding:9px 14px;font-weight:600;list-style:none;display:flex;gap:10px}
+details.q>summary::-webkit-details-marker{display:none}
+details.q>summary::before{content:"▸";color:var(--accent);flex:none;transition:transform .15s}
+details.q[open]>summary::before{transform:rotate(90deg)}
+details.q>div{padding:0 14px 11px 34px;color:var(--ink)}
+details.q>div p:last-child{margin-bottom:0}
+.qn{color:var(--muted);font-weight:500;font-size:13px;white-space:nowrap}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px}
+button.b{font:inherit;font-size:13.5px;border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);padding:5px 12px;border-radius:8px;cursor:pointer}
+button.b:hover{background:var(--accent);color:var(--bg)}
+.chk{list-style:none;padding:0}
+.chk li{display:flex;gap:9px;align-items:flex-start;padding:5px 0}
+.chk input{margin-top:6px;width:16px;height:16px;accent-color:var(--ok);flex:none}
+.tool{background:var(--surface);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;margin:16px 0}
+.tool h4{margin:0 0 8px;color:var(--accent)}
+.tool label{display:block;font-size:13.5px;color:var(--muted);margin:8px 0 3px}
+.tool input,.tool textarea,.tool select{font:inherit;font-size:14px;width:100%;padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.tool textarea{font-family:ui-monospace,Consolas,monospace;font-size:13px;min-height:200px;resize:vertical}
+.row{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.out{margin-top:10px}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-weight:600;font-size:13px}
+.pill.y{background:var(--ok-soft);color:var(--ok)}
+.pill.n{background:var(--warn-soft);color:var(--warn)}
+footer{margin-top:56px;color:var(--muted);font-size:13.5px;border-top:1px solid var(--line);padding-top:14px}
+@media (max-width:560px){h1{font-size:25px}h2{font-size:21px}.ptxt{display:none}.brand{font-size:14px}}
+@media print{header.top,.bar,.tool,.theme{display:none}details.q>div{display:block}details.q{break-inside:avoid}body{background:#fff;color:#000}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="top-row">
+      <span class="brand">Guia de Estudo · Compiladores</span>
+      <div class="progress" aria-hidden="true"><i id="pbar"></i></div>
+      <span class="ptxt" id="ptxt">0% concluído</span>
+      <button class="theme" id="theme" type="button" aria-label="Alternar tema claro/escuro">Tema</button>
+    </div>
+    <nav class="chips" id="chips" aria-label="Seções">
+      <a href="#inicio">Início</a>
+      <a href="#s1">1 · Análise semântica</a>
+      <a href="#s2">2 · Escopo</a>
+      <a href="#s3">3 · Cód. intermediário</a>
+      <a href="#s4">4 · Otimização e objeto</a>
+      <a href="#s5">5 · Memória</a>
+      <a href="#fim">Revisão final</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<!-- ============================ INÍCIO ============================ -->
+<section id="inicio">
+  <span class="tag">2º bimestre</span>
+  <h1>Guia de estudo – Compiladores</h1>
+  <p class="lead">Organizado pelas <b>atividades</b> do material: para cada lista de exercícios você encontra o resumo do que ela cobra, o passo a passo dos tipos de questão que exigem cálculo, as pegadinhas e um autoteste com resposta escondida. Marque cada habilidade que dominar e acompanhe o progresso no topo.</p>
+
+  <h3>O que tem no zip</h3>
+  <div class="tw"><table>
+    <tr><th>Pasta</th><th>Atividade (base deste guia)</th><th>Material de apoio</th></tr>
+    <tr><td><b>1_AnaliseSemantica</b></td>
+        <td><code>Exercicio_TraducaoDigiridaPorSintaxe</code> (itens 0–22)<br><code>novos_exercicios_de_Analise_Semantica</code> (80 questões)<br><code>exercicios_escopo_variaveis_compiladores_Aluno</code> (5 exercícios, itens 1–29)</td>
+        <td>Slides Geovane (p1, p2) e Aula 12 do Prof. Celso (tabela de símbolos)</td></tr>
+    <tr><td><b>2_GerCodIntermediario</b></td>
+        <td><code>Exerc_GeracaoCodigoIntermediario</code> (itens 1–23)</td>
+        <td>05 Geração de Código Intermediário, Compiladores14, IntCodeGen, 17 Síntese</td></tr>
+    <tr><td><b>3_Otimizacao_GeracaoCodObjeto</b></td>
+        <td><code>Exercicios_OtimizacaoCodigo_GeradorCodigo_GerenciaMemoria</code> (itens 1–23)</td>
+        <td>17 Síntese, 07 Gerência de Memória, 08 Geração de Código Objeto, RunTime Environment</td></tr>
+  </table></div>
+
+  <h3>Plano sugerido (5 sessões)</h3>
+  <ol class="steps">
+    <li><b>Análise semântica e SDD</b> (seção 1): conceitos, atributos, S/L-atribuída, tabela de símbolos.</li>
+    <li><b>Escopo de variáveis</b> (seção 2) e treino das árvores anotadas e grafos de dependência.</li>
+    <li><b>Código intermediário</b> (seção 3): DAG, 3 endereços, SSA, tipos e larguras.</li>
+    <li><b>Otimização e código objeto</b> (seção 4), depois <b>memória</b> (seção 5): árvores de ativação e first/best-fit.</li>
+    <li><b>Revisão final</b>: cola de regras, refaça as questões marcadas como difíceis e releia as pegadinhas.</li>
+  </ol>
+
+  <div class="note"><b>Como usar</b>
+    Antes de abrir a resposta, tente responder de cabeça ou no papel. Para as questões que pedem desenho (árvores, grafos, código), faça no papel e só depois confira com o exemplo resolvido e com os simuladores. As respostas completas de todas as listas estão em <a href="Respostas_Compiladores.pdf">Respostas_Compiladores.pdf</a> (mesma pasta).</div>
+</section>
+
+<!-- ============================ S1 ============================ -->
+<section class="blk" id="s1">
+  <span class="tag">1 · Análise semântica</span>
+  <h2>Análise semântica e tradução dirigida por sintaxe</h2>
+  <p class="src">Atividades: <code>Exercicio_TraducaoDigiridaPorSintaxe</code> e <code>novos_exercicios_de_Analise_Semantica</code>. Slides: Geovane p1/p2 e Aula 12 (Celso).</p>
+
+  <h3>O essencial</h3>
+  <div class="grid">
+    <div class="card"><h4>O que faz</h4>
+      <p>Verifica o que a sintaxe não alcança: <b>declaração antes do uso</b>, <b>tipos compatíveis</b>, <b>unicidade</b> no escopo, parâmetros de chamadas. Também coleta informação para gerar código.</p>
+      <p><b>Estática</b>: na compilação (C, Pascal). <b>Dinâmica</b>: na execução (LISP, PROLOG, PHP; divisão por zero, índice fora do vetor).</p></div>
+    <div class="card"><h4>Como se formaliza</h4>
+      <p>Dois pilares: <b>semântica dirigida pela sintaxe</b> (gramática de atributos) e <b>tabela de símbolos</b>. Na prática costuma ser <b>ad hoc</b> (“artesanal”): rotinas semânticas escritas à mão dentro dos procedimentos do analisador sintático, sem formalismo universal.</p></div>
+    <div class="card"><h4>Atributos</h4>
+      <p><b>Sintetizado</b>: calculado a partir dos <b>filhos</b> (sobe). Ex.: <code>E.val = E₁.val + T.val</code>.</p>
+      <p><b>Herdado</b>: calculado a partir do <b>pai e/ou irmãos</b> (desce ou vai para a direita). Ex.: <code>T'.inh = F.val</code>.</p>
+      <p>Terminais só têm sintetizados (valores vindos do léxico, ex.: <code>digit.lexval</code>).</p></div>
+  </div>
+
+  <h4>SDD × SDT</h4>
+  <div class="tw"><table>
+    <tr><th></th><th>SDD (definição dirigida)</th><th>SDT (esquema de tradução)</th></tr>
+    <tr><td>O que é</td><td>Regras semânticas associadas às produções</td><td>Ações entre chaves <code>{ }</code> dentro do corpo das produções</td></tr>
+    <tr><td>Ordem de execução</td><td>Não especificada (vem da dependência entre atributos)</td><td>Explícita: pela posição da ação, da esquerda para a direita</td></tr>
+    <tr><td>Nível</td><td>Alto nível, esconde a implementação</td><td>Mostra como implementar</td></tr>
+    <tr><td>Exemplo</td><td><code>E → E₁ + T &nbsp; E.val = E₁.val + T.val</code></td><td><code>E → E₁ + T { print('+') }</code></td></tr>
+  </table></div>
+
+  <h4>S-atribuída × L-atribuída</h4>
+  <div class="tw"><table>
+    <tr><th></th><th>S-atribuída</th><th>L-atribuída</th></tr>
+    <tr><td>Atributos</td><td>Só sintetizados</td><td>Sintetizados ou herdados que dependam só de: herdados do pai, atributos dos <b>irmãos à esquerda</b> e do próprio símbolo (sem ciclo)</td></tr>
+    <tr><td>Avaliação</td><td>De baixo para cima (pós-ordem)</td><td>Em profundidade, esquerda → direita</td></tr>
+    <tr><td>Combina com</td><td>Análise LR (calcula na redução, atributos na pilha)</td><td>Análise descendente recursiva (herdados = parâmetros, sintetizados = retorno)</td></tr>
+    <tr><td>Relação</td><td colspan="2">Toda S-atribuída também é L-atribuída.</td></tr>
+  </table></div>
+
+  <h4>Grafo de dependência</h4>
+  <ul>
+    <li>Nós = atributos de cada nó da árvore. Aresta <code>a → b</code> = “b depende de a”.</li>
+    <li>A <b>ordem de avaliação</b> é uma <b>ordenação topológica</b> do grafo. Pode haver várias ordens válidas.</li>
+    <li><b>Ciclo</b> = SDD circular: não existe ordem, a tradução é impossível.</li>
+    <li><b>Árvore anotada</b> = árvore de derivação já com os valores dos atributos. O <b>grafo</b> mostra como chegar a esses valores.</li>
+  </ul>
+
+  <h4>Como implementar uma SDT</h4>
+  <ul>
+    <li><b>Ascendente (LR):</b> SDT pós-fixado, ações no fim do corpo, executadas na redução, sem construir a árvore. Ação no meio exige <b>marcador</b>: <code>B → X {a} Y</code> vira <code>B → X M Y</code>, <code>M → ε {a}</code>.</li>
+    <li><b>Descendente:</b> ação dentro do procedimento (<code>B(); X(); a; Y();</code>).</li>
+    <li><b>Qualquer SDT:</b> ignore as ações, monte a árvore, depois percorra em pré-ordem executando-as.</li>
+  </ul>
+
+  <h4>Tabela de símbolos (Aula 12)</h4>
+  <ul>
+    <li><b>Campos típicos:</b> lexema/nome, token, categoria (var, proc, parâmetro…), tipo, valor, escopo/nível, endereço, “utilizada” (S/N), e para vetor: tamanho e limites; para procedimento: nº e tipo dos parâmetros.</li>
+    <li><b>Operações:</b> inserir (declaração), buscar (uso), remover (fim do escopo).</li>
+    <li><b>Implementação:</b> dinâmica é a melhor; <b>hashing</b> é o acesso mais eficiente (precisa tratar colisões).</li>
+    <li><b>Escopo:</b> campo de nível (<code>nível+1</code> ao entrar no procedimento, <code>nível−1</code> ao sair), ou várias tabelas, ou lista ligada de locais por procedimento.</li>
+    <li><b>Declaração duplicada:</b> antes de inserir, busque no escopo atual; se achar, erro.</li>
+    <li><b>Declarada e não usada:</b> campo “utilizada” continua N no fim do escopo.</li>
+  </ul>
+
+  <h3>Passo a passo das questões práticas</h3>
+  <h4>Árvore de derivação anotada (itens 15, 16, 17)</h4>
+  <ol class="steps">
+    <li>Derive a árvore da entrada com a gramática da SDD.</li>
+    <li>Nas folhas, preencha <code>digit.lexval</code> com o número lido.</li>
+    <li>Suba aplicando a regra semântica de cada produção (sintetizados).</li>
+    <li>Se houver herdados (SDD com <code>T'</code>), <b>desça</b> passando <code>T'.inh</code> e depois suba com <code>syn</code>.</li>
+  </ol>
+<pre><code>3*5+4 n  (SDD da calculadora)          3*5  (SDD com herdados)
+L.val=19                               T.val=15           (T.val = T'.syn)
++-- E.val=19  (E → E1 + T)             +-- F.val=3 → digit.lexval=3
+|   +-- E1.val=15 → T.val=15           +-- T'.inh=3, T'.syn=15   (T'.inh = F.val)
+|   |   +-- T1.val=3 → F=3                 +-- *
+|   |   +-- *                              +-- F.val=5 → digit.lexval=5
+|   |   +-- F.val=5                        +-- T'1.inh=15, T'1.syn=15
+|   +-- +                                      (T'1.inh = T'.inh * F.val;
+|   +-- T.val=4 → F=4                           T' → ε: syn = inh)
++-- n</code></pre>
+  <div class="ok"><b>Valores para conferir</b> (3+4)*(5+6) n → <b>L.val = 77</b>; 3*5+4 n → <b>19</b>; 3*5 → <b>15</b>.</div>
+
+  <h4>Grafo de dependência e ordem topológica de 3 * 5 (item 19)</h4>
+<pre><code>Nós: 1 digit1.lexval  2 F1.val  3 T'.inh  4 digit2.lexval  5 F2.val
+     6 T'1.inh  7 T'1.syn  8 T'.syn  9 T.val
+Arestas: 1→2   2→3   4→5   3→6   5→6   6→7   7→8   8→9
+Ordens válidas:  1,2,3,4,5,6,7,8,9    e    4,5,1,2,3,6,7,8,9</code></pre>
+
+  <h3>Pegadinhas</h3>
+  <div class="warn"><b>Atenção</b>
+    <ul>
+      <li><b>Circularidade:</b> trocar a regra para <code>T'.inh = T'₁.syn</code> cria ciclo (inh → syn → inh).</li>
+      <li><b>L-atribuída:</b> <code>B.i = f(C.c, A.s)</code> em <code>A → B C</code> <u>não</u> é L-atribuída, porque B.i usa C.c (irmão à direita).</li>
+      <li>Herdado <b>pode</b> depender de sintetizado do próprio Xᵢ (sem ciclo), mas <b>não</b> de sintetizado do pai nem de irmão à direita.</li>
+      <li><b>Efeito colateral:</b> <code>L → E n { print(E.val) }</code> imprime; não é gramática de atributos “pura” (stricto sensu: sem efeitos colaterais).</li>
+      <li><b>Prefixa em passo único ascendente é impossível:</b> a ação só roda na redução, depois dos operandos.</li>
+      <li><b>Itens 25 e 68 dos “novos exercícios”</b> citam <i>Marching Cubes</i> e <i>Homem Visível</i>, que <u>não aparecem</u> nos PDFs de compiladores. São verificação de fonte: responda que não consta no material.</li>
+      <li>O subscrito (<code>E₁</code>) só distingue as ocorrências de E na regra; não faz parte da gramática.</li>
+    </ul></div>
+
+  <h3>Autoteste</h3>
+  <div class="bar"><button class="b" data-toggle="s1">Abrir/fechar todas</button></div>
+  <div id="s1-cards">
+    <details class="q"><summary>Diferencie atributo sintetizado de herdado. <span class="qn">Exerc. 12</span></summary><div><p>Sintetizado vem dos filhos (<code>E.val = E₁.val + T.val</code>). Herdado vem do pai e/ou irmãos (<code>T'.inh = F.val</code>).</p></div></details>
+    <details class="q"><summary>Por que terminais só têm atributos sintetizados? <span class="qn">Novos 2</span></summary><div><p>Seus valores vêm do analisador léxico (<code>lexval</code>); nenhuma regra os calcula a partir de pai ou irmãos.</p></div></details>
+    <details class="q"><summary>SDD × esquema de tradução: qual a diferença? <span class="qn">Exerc. 7 · Novos 1</span></summary><div><p>SDD só liga regras às produções, sem ordem de execução e sem mostrar a implementação. SDT insere ações no corpo das produções, com a ordem dada pela posição.</p></div></details>
+    <details class="q"><summary>O que caracteriza uma SDD S-atribuída e por que combina com LR? <span class="qn">Exerc. 14 · Novos 16–17</span></summary><div><p>Usa só sintetizados. Na redução LR os atributos dos filhos já estão na pilha, então o cálculo sai de baixo para cima junto com a análise.</p></div></details>
+    <details class="q"><summary>O que é uma L-atribuída? <span class="qn">Novos 18</span></summary><div><p>Herdados dependem só do pai e dos irmãos à esquerda (e do próprio símbolo), sem ciclos; avaliada em profundidade, esquerda → direita.</p></div></details>
+    <details class="q"><summary>Árvore anotada × grafo de dependência. <span class="qn">Exerc. 18</span></summary><div><p>Árvore anotada: árvore de derivação com os valores dos atributos. Grafo: nós = atributos, arestas = dependências, usado para achar a ordem de cálculo.</p></div></details>
+    <details class="q"><summary>Como obter a ordem de avaliação? E se houver ciclo? <span class="qn">Novos 21–22</span></summary><div><p>Ordenação topológica do grafo. Com ciclo não existe ordem válida: a SDD é circular.</p></div></details>
+    <details class="q"><summary>Que classes de SDD garantem ordem de avaliação? <span class="qn">Exerc. 20</span></summary><div><p>S-atribuídas (de baixo para cima, com LR) e L-atribuídas (profundidade, esquerda → direita, com descendente).</p></div></details>
+    <details class="q"><summary>Como uma SDT pode ser implementada? <span class="qn">Exerc. 22 · Novos 31</span></summary><div><p>Ignorando as ações para montar a árvore e depois percorrendo em pré-ordem; ou durante a análise: LL (ações nos procedimentos) ou LR (ações na redução, marcador para ações no meio).</p></div></details>
+    <details class="q"><summary>Em <code>T' → * F T'₁</code>, como o operando esquerdo chega ao resultado? <span class="qn">Novos 34, 76</span></summary><div><p>Por herdado: <code>T'₁.inh = T'.inh × F.val</code>. Depende do pai e do irmão à esquerda, logo é L-atribuída.</p></div></details>
+    <details class="q"><summary>O que acontece em <code>T' → ε</code>? <span class="qn">Novos 63</span></summary><div><p><code>T'.syn = T'.inh</code>: copia o valor acumulado, que sobe até <code>T.val</code>.</p></div></details>
+    <details class="q"><summary>Quais campos tem uma entrada da tabela de símbolos? <span class="qn">Novos 40</span></summary><div><p>Nome, categoria, tipo, escopo/nível, endereço, tamanho, “usada” e, para procedimentos, lista de parâmetros.</p></div></details>
+    <details class="q"><summary>Como detectar identificador declarado duas vezes? <span class="qn">Novos 47</span></summary><div><p>Antes de inserir, busca-se o nome no escopo atual; se existir, emite erro; senão, insere.</p></div></details>
+    <details class="q"><summary>Por que usar hashing na tabela de símbolos? <span class="qn">Novos 43</span></summary><div><p>Busca e inserção em tempo médio constante, em vez de busca linear.</p></div></details>
+    <details class="q"><summary>Por que <code>div</code> exige cuidado semântico? <span class="qn">Novos 55</span></summary><div><p>Exige operandos inteiros (resultado inteiro) e divisor diferente de zero (erro em execução).</p></div></details>
+    <details class="q"><summary>Por que ação no início da produção é problema em ascendente? <span class="qn">Novos 30, 67, 70</span></summary><div><p>A produção só é conhecida na redução. Ação no início/meio exige marcador <code>M → ε</code> e pode gerar conflito; por isso a forma prefixa não sai em passo único.</p></div></details>
+  </div>
+
+  <h3>Sei fazer</h3>
+  <ul class="chk" data-group="s1">
+    <li><input type="checkbox" id="c-s1-1"><label for="c-s1-1">Diferenciar sintetizado/herdado e S/L-atribuída com exemplo</label></li>
+    <li><input type="checkbox" id="c-s1-2"><label for="c-s1-2">Montar uma árvore de derivação anotada (com e sem herdados)</label></li>
+    <li><input type="checkbox" id="c-s1-3"><label for="c-s1-3">Desenhar o grafo de dependência e dar uma ordem topológica</label></li>
+    <li><input type="checkbox" id="c-s1-4"><label for="c-s1-4">Explicar como implementar SDT em LL e LR (marcador)</label></li>
+    <li><input type="checkbox" id="c-s1-5"><label for="c-s1-5">Descrever tabela de símbolos: campos, operações, escopo, hashing</label></li>
+  </ul>
+</section>
+
+<!-- ============================ S2 ============================ -->
+<section class="blk" id="s2">
+  <span class="tag">2 · Escopo</span>
+  <h2>Escopo de variáveis em C</h2>
+  <p class="src">Atividade: <code>exercicios_escopo_variaveis_compiladores_Aluno</code> (exercícios 1 a 5, itens 1–29).</p>
+
+  <h3>O método</h3>
+<pre><code>contador = 0
+ao abrir "{":   contador++ ;  escopo.entrada = contador
+ao fechar "}":  contador++ ;  escopo.saida   = contador</code></pre>
+  <p>O escopo <b>global</b> é o primeiro a abrir (entrada 1) e o último a fechar. Cada <code>{ }</code> é um escopo (função, bloco, <code>if</code>, <code>for</code>, <code>while</code> com chaves).</p>
+
+  <div class="card"><h4>Regras que resolvem tudo</h4>
+    <ul>
+      <li><b>Contenção:</b> A contém B ⇔ <code>entrada(A) ≤ entrada(B)</code> <b>e</b> <code>saída(B) ≤ saída(A)</code>.</li>
+      <li><b>Visibilidade:</b> variável declarada em D pode ser usada em U se D <b>contém</b> U.</li>
+      <li><b>Sombreamento:</b> havendo vários nomes visíveis, vale o do escopo <b>mais próximo</b> do uso.</li>
+      <li><b>Escopos irmãos</b> não enxergam as locais um do outro.</li>
+      <li><b>Redeclaração no mesmo escopo = erro.</b> Mesmo nome em escopo interno = sombreamento (permitido).</li>
+      <li>Variável declarada no cabeçalho de um <code>for</code> pertence ao escopo desse <code>for</code>.</li>
+      <li>Uso depois do <code>}</code> que fecha o escopo da declaração = não visível.</li>
+    </ul></div>
+
+  <h3>Passo a passo de uma questão</h3>
+  <ol class="steps">
+    <li>Marque cada <code>{</code> e <code>}</code> e numere na ordem em que aparecem (use o simulador abaixo para conferir).</li>
+    <li>Desenhe a árvore de escopos (quem está dentro de quem).</li>
+    <li>Liste as declarações de cada escopo (a tabela de símbolos).</li>
+    <li>Para cada comando, resolva cada nome: do escopo do comando para fora, o primeiro que declara o nome vence.</li>
+    <li>Se o nome não aparece em nenhum escopo que contenha o comando, o comando é <b>inválido</b>. Justifique com a regra de contenção.</li>
+  </ol>
+
+  <h4>Exercício 1 resolvido (do enunciado)</h4>
+<pre><code>int g = 1;                         global  1/8
+int main() {                       main    2/7
+    int a = 10, b = 20;
+    { int a = 30;                  bloco 1 3/4
+      int x = a + b + g; }         a=bloco1, b=main, g=global  → ok
+    { int b = 40;                  bloco 2 5/6
+      int y = a + b + g;           a=main, b=bloco2, g=global  → ok
+      x = y + a; }                 x é do bloco 1 → INVÁLIDO
+    int z = a + b + g;             a,b=main, g=global          → ok
+}
+Contém? bloco1 ⊇ bloco2:  3 ≤ 5 (V)  e  6 ≤ 4 (F)  → não contém</code></pre>
+
+  <div class="tool" id="tool-scope">
+    <h4>Simulador: numerar escopos e testar contenção</h4>
+    <p style="font-size:14px;color:var(--muted);margin:0 0 6px">Cole um trecho de C. O global é o escopo 1. (Não trata chaves dentro de inicializadores como <code>{1,2}</code>.)</p>
+    <textarea id="sc-src" spellcheck="false">int g = 5;
+
+int main() {
+    int a = 1;
+    int r = 0;
+    {
+        int b = 2;
+        {
+            int c = a + b + g;
+            r = c;
+        }
+    }
+    {
+        int b = 3;
+        {
+            int c = b + g;
+            r = r + c;
+        }
+    }
+    r = r + a + b;
+}</textarea>
+    <div class="bar" style="margin-top:8px"><button class="b" id="sc-go" type="button">Numerar escopos</button></div>
+    <div class="out" id="sc-out"></div>
+    <div id="sc-cont" hidden>
+      <div class="row">
+        <div><label for="sc-a">A (onde a variável foi declarada)</label><select id="sc-a"></select></div>
+        <div><label for="sc-b">B (onde ela é usada)</label><select id="sc-b"></select></div>
+      </div>
+      <div class="out" id="sc-res"></div>
+    </div>
+  </div>
+
+  <h3>Gabarito comentado dos exercícios 2–5</h3>
+  <div class="bar"><button class="b" data-toggle="s2">Abrir/fechar todas</button></div>
+  <div id="s2-cards">
+    <details class="q"><summary>Ex. 2 · Entrada/saída dos escopos <span class="qn">item 6</span></summary><div><p>global 1/10, main 2/9, bloco 3/8, for externo 4/7, for interno 5/6.</p></div></details>
+    <details class="q"><summary>Ex. 2 · <code>int parcial = total + i + taxa;</code> <span class="qn">item 7</span></summary><div><p><code>total</code> = o do bloco (10); <code>i</code> = o do for externo; <code>taxa</code> = global.</p></div></details>
+    <details class="q"><summary>Ex. 2 · <code>int taxa = j + parcial;</code> altera a taxa global? <span class="qn">item 8</span></summary><div><p>Não. Declara uma <b>nova</b> taxa local no for interno, que sombreia a global.</p></div></details>
+    <details class="q"><summary>Ex. 2 · <code>total = taxa + i;</code> no for interno: qual total? <span class="qn">item 9</span></summary><div><p>O do <b>bloco</b> (o mais próximo), não o de main. <code>taxa</code> = local do for interno; <code>i</code> = do for externo.</p></div></details>
+    <details class="q"><summary>Ex. 2 · Comando final em main <span class="qn">item 10</span></summary><div><p><code>total</code> e <code>i</code> de main (100 e 50) e <code>taxa</code> global (2). Todas as operações do exercício são compatíveis.</p></div></details>
+    <details class="q"><summary>Ex. 3 · Numeração e árvore <span class="qn">itens 12–13</span></summary><div><p>global 1/12, main 2/11, B1 3/6, B1.1 4/5, B2 7/10, B2.1 8/9. Árvore: global → main → {B1 → B1.1; B2 → B2.1}.</p></div></details>
+    <details class="q"><summary>Ex. 3 · <code>r = r + a + b;</code> em main é válido? <span class="qn">item 15</span></summary><div><p>Não: <code>b</code> só existe dentro de B1 e B2; não é visível em main.</p></div></details>
+    <details class="q"><summary>Ex. 3 · Pares compatíveis <span class="qn">item 16</span></summary><div><p>b de B1 no B2.1: <b>não</b> (9 ≤ 6 falso). c de B1.1 no B2.1: <b>não</b> (9 ≤ 5 falso). g global em todos: <b>sim</b>. r de main nos blocos internos: <b>sim</b>.</p></div></details>
+    <details class="q"><summary>Ex. 4 · Onde está o erro de redeclaração? <span class="qn">itens 17–18</span></summary><div><p><code>int a = 2;</code> redeclara <code>a</code> no mesmo escopo (main). Já <code>int a = 3;</code> no bloco interno é sombreamento permitido.</p></div></details>
+    <details class="q"><summary>Ex. 4 · <code>g = a + b;</code> no bloco mais interno e <code>b = b + a;</code> no intermediário <span class="qn">itens 19–20</span></summary><div><p>Mais interno: <code>g</code> global, <code>a</code> do bloco intermediário (3), <code>b</code> do mais interno (4). No intermediário: altera o <code>b</code> do <b>próprio</b> bloco intermediário.</p></div></details>
+    <details class="q"><summary>Ex. 4 · <code>b = a + g;</code> final é válido? <span class="qn">item 21</span></summary><div><p>Não: <code>b</code> só existe nos blocos internos.</p></div></details>
+    <details class="q"><summary>Ex. 5 · Numeração completa <span class="qn">itens 22–23</span></summary><div><p>global 1/14, main 2/13, if 3/6, for 4/5, while 7/10, bloco do while 8/9, bloco final 11/12.</p></div></details>
+    <details class="q"><summary>Ex. 5 · <code>k = c + h;</code> após o for <span class="qn">item 25</span></summary><div><p>Inválido: <code>k</code> é do for (4/5), que não contém o comando no if (3/6).</p></div></details>
+    <details class="q"><summary>Ex. 5 · No while, <code>h = c + a;</code> altera qual h? <span class="qn">item 26</span></summary><div><p>O <b>h global</b> (o h local do if já saiu de escopo). <code>c</code> é o do bloco interno; <code>a</code> é o de main.</p></div></details>
+    <details class="q"><summary>Ex. 5 · <code>a = g + h;</code> no bloco final e <code>c = a + b + g + h;</code> final <span class="qn">itens 27–28</span></summary><div><p>Bloco final: <code>g</code> = local (5), <code>h</code> = global. Comando final: a, b, c de main; g, h globais.</p></div></details>
+    <details class="q"><summary>Ex. 5 · Quais comandos são inválidos? <span class="qn">item 29</span></summary><div><p>Só <code>k = c + h;</code> (após o for).</p></div></details>
+  </div>
+
+  <div class="warn"><b>Erros comuns</b>
+    <ul>
+      <li>Achar que blocos irmãos dentro de <code>main</code> se enxergam (não se enxergam).</li>
+      <li>Esquecer que o global também recebe número (entrada 1, saída no fim).</li>
+      <li>Trocar a ordem na regra: é <code>saída(B) ≤ saída(A)</code>, com A o escopo da <u>declaração</u>.</li>
+      <li>Confundir sombreamento (permitido) com redeclaração no mesmo escopo (erro).</li>
+    </ul></div>
+
+  <h3>Sei fazer</h3>
+  <ul class="chk" data-group="s2">
+    <li><input type="checkbox" id="c-s2-1"><label for="c-s2-1">Numerar entrada/saída de todos os escopos de um código</label></li>
+    <li><input type="checkbox" id="c-s2-2"><label for="c-s2-2">Aplicar a regra de contenção e justificar um comando inválido</label></li>
+    <li><input type="checkbox" id="c-s2-3"><label for="c-s2-3">Resolver sombreamento: dizer qual declaração cada nome usa</label></li>
+    <li><input type="checkbox" id="c-s2-4"><label for="c-s2-4">Distinguir redeclaração de sombreamento</label></li>
+  </ul>
+</section>
+
+<!-- ============================ S3 ============================ -->
+<section class="blk" id="s3">
+  <span class="tag">3 · Código intermediário</span>
+  <h2>Geração de código intermediário</h2>
+  <p class="src">Atividade: <code>Exerc_GeracaoCodigoIntermediario</code> (itens 1–23). Slides: 05 Geração de Código Intermediário, Compiladores14, IntCodeGen, 17 Síntese.</p>
+
+  <h3>O essencial</h3>
+  <div class="grid">
+    <div class="card"><h4>Para que serve</h4>
+      <p>Fica entre o front-end e o back-end. Detalhes da <b>linguagem fonte</b> ficam no front-end e os da <b>máquina</b> no back-end. Com isso, <b>m front-ends + n back-ends</b> geram m × n compiladores.</p></div>
+    <div class="card"><h4>Vantagens e desvantagem</h4>
+      <p><b>+</b> portabilidade, otimização independente da máquina, implementação mais simples, abstração resolvida aos poucos.</p>
+      <p><b>−</b> um passo a mais: compilação mais lenta.</p></div>
+    <div class="card"><h4>Intermediário × objeto</h4>
+      <p>O intermediário <b>não especifica</b> registradores nem endereços reais; usa temporários ilimitados. O objeto é da máquina-alvo.</p></div>
+  </div>
+
+  <h4>Tipos (categorias)</h4>
+  <div class="tw"><table>
+    <tr><th>Categoria</th><th>Exemplos</th><th>Bom para</th></tr>
+    <tr><td>Gráfica / hierárquica</td><td>Árvore de sintaxe, grafo de sintaxe (DAG)</td><td>Estrutura do programa, verificação de tipos</td></tr>
+    <tr><td>Linear</td><td>Pós-fixada, pré-fixada, código de 3 endereços (quádruplas, triplas)</td><td>Otimizar e gerar código objeto</td></tr>
+  </table></div>
+
+  <h4>Árvore de derivação → árvore de sintaxe → grafo</h4>
+  <ul>
+    <li><b>Árvore de sintaxe:</b> só os operadores nos nós interiores e operandos nas folhas; remove cadeias de produções simples (A → B, B → C).</li>
+    <li><b>Grafo (DAG):</b> igual, mas <b>compartilha subexpressões idênticas</b>: um nó com mais de um pai.</li>
+  </ul>
+  <p>A gramática do item 8 é a mesma do slide, que usa a sentença <code>a = b*c + b*c</code>:</p>
+<pre><code>Árvore de sintaxe          Grafo de sintaxe
+     =                          =
+    / \                        / \
+   a   +                      a   +
+      / \                        / \
+     *   *                       \ /
+    / \ / \                       *
+   b  c b  c                     / \
+                                b   c</code></pre>
+
+  <h4>Construir o DAG (item 9): função Node/Leaf com reaproveitamento</h4>
+  <p>Antes de criar um nó, verifique se já existe um com o mesmo rótulo e os mesmos filhos, na mesma ordem. Para <code>a + a*(b−c) + (b−c)*d</code>:</p>
+<pre><code>n1: a        n2: b        n3: c
+n4: - (n2,n3)               ← (b−c), reaproveitado depois
+n5: * (n1,n4)               ← a*(b−c)
+n6: + (n1,n5)               ← a + a*(b−c)
+n7: d
+n8: * (n4,n7)               ← (b−c)*d
+n9: + (n6,n8)               ← raiz</code></pre>
+
+  <h3>Código de 3 endereços</h3>
+  <ul>
+    <li>No máximo <b>um operador</b> e <b>3 endereços</b> por instrução; usa temporários e rótulos.</li>
+    <li>Formatos: <code>A := B op C</code> · <code>A := op B</code> · <code>A := B</code> · <code>goto L</code> · <code>if A oprel B goto L</code> · <code>param X</code> · <code>call P, N</code> · <code>return Y</code> · <code>A := B[i]</code> · <code>A[i] := B</code>.</li>
+    <li>Árvores de sintaxe: boas para análise e tipos. 3 endereços: boa para otimização e geração.</li>
+    <li><b>Quádruplas</b>: operador, arg1, arg2, resultado. <b>Triplas</b>: operador, arg1, arg2, e o resultado é referenciado pela posição <code>(n)</code>, sem temporários nomeados.</li>
+    <li>Rótulos: <b>simbólicos</b> (<code>L:</code>) ou por <b>posição numérica</b> (100, 101…).</li>
+  </ul>
+<pre><code>A := B * (-C + D)
+Quádruplas                    Triplas
+(0) -u  C   -   T1            (0) -u  C
+(1) +   T1  D   T2            (1) +   (0)  D
+(2) *   B   T2  T3            (2) *   B    (1)
+(3) :=  T3  -   A             (3) :=  A    (2)</code></pre>
+
+  <h4>Item 13 — DAG para 3 endereços</h4>
+<pre><code>Simbólico              Numérico
+L: t1 := b - c         100: t1 := b - c
+   t2 := a * t1        101: t2 := a * t1
+   t3 := a + t2        102: t3 := a + t2
+   t4 := t1 * d        103: t4 := t1 * d
+   t5 := t3 + t4       104: t5 := t3 + t4</code></pre>
+
+  <h4>Item 14 — tradução de laços e vetores (cada posição = 8)</h4>
+  <p><b>Receita:</b> (1) inicialização; (2) rótulo do teste com o desvio de saída <b>invertido</b>; (3) corpo; (4) incremento; (5) <code>goto</code> de volta ao teste. Acesso a <code>a[i]</code> vira <code>t := i * 8; a[t]</code>. Chamada: <code>param</code> para cada argumento e depois <code>call</code>.</p>
+<pre><code>        i := 2
+L1:     if i > n goto L2          // for (i=2; i&lt;=n; i++) a[i]=a[i]*10;
+        t1 := i * 8
+        t2 := a[t1]
+        t3 := t2 * 10
+        t4 := i * 8
+        a[t4] := t3
+        i := i + 1
+        goto L1
+L2:     count := 0
+        s := n
+        param s
+        param n
+        subtotal := call soma, 2
+        i := 2
+L3:     if i > s goto L6          // for (i=2; i&lt;=s; i++)
+        t5 := i * 8
+        t6 := a[t5]
+        if t6 &lt;= 100 goto L5       //   if (a[i] > 100) {...}
+        count := count + 1
+        t7 := 2 * i
+        j := t7
+L4:     if j > n goto L5          //   for (j=2*i; j&lt;=n; j=j+i)
+        t8 := j * 8
+        t9 := a[t8]
+        t10 := t9 - 10
+        t11 := j * 8
+        a[t11] := t10
+        j := j + i
+        goto L4
+L5:     i := i + 1
+        goto L3
+L6:</code></pre>
+
+  <h4>Item 15 — arranjo de registros para <code>i = i + 10</code></h4>
+<pre><code>1 | id  | entrada de i
+2 | num | 10
+3 | +   | 1 | 2
+4 | =   | 1 | 3        (raiz = 4)</code></pre>
+
+  <h4>Itens 16–17 — SSA</h4>
+  <p>Forma em que <b>cada variável é atribuída uma única vez</b>: cada definição ganha uma nova versão, e onde fluxos se juntam entra uma função <b>φ</b> que escolhe a versão. Facilita propagação de constantes e remoção de código morto.</p>
+<pre><code>p = a + b        p1 = a + b
+q = p - c        q1 = p1 - c
+p = q * d   →    p2 = q1 * d
+p = e - p        p3 = e - p2
+q = p + q        q2 = p3 + q1</code></pre>
+
+  <h4>Item 18 — tipos e larguras (SDT da figura 6.15) para <code>int[3][4]</code></h4>
+  <p>Regras: <code>T → B C</code>; <code>B → int</code> (tipo integer, largura 4); <code>C → ε</code> (<code>C.type = t</code>, <code>C.width = w</code>); <code>C → [num] C₁</code> (<code>array(num, C₁.type)</code>, largura <code>num × C₁.width</code>). O <code>t</code> e o <code>w</code> descem como herdados e a largura final sobe.</p>
+<pre><code>C2 (ε):          integer, largura 4
+C1 → [4] C2:     array(4, integer), largura 4 × 4 = 16
+C  → [3] C1:     array(3, array(4, integer)), largura 3 × 16 = 48
+T:               array(3, array(4, integer)), largura 48</code></pre>
+
+  <h3>Tipos: verificação, conversão, sobrecarga (itens 19–23)</h3>
+  <div class="tw"><table>
+    <tr><th>Conceito</th><th>Resumo</th></tr>
+    <tr><td>Verificação de tipo</td><td>Atribui tipo às expressões e confere se operadores, atribuições e chamadas recebem tipos compatíveis (erro ou coerção).</td></tr>
+    <tr><td>Fortemente tipada</td><td>Toda expressão tem tipo definido e as operações só aceitam tipos compatíveis; erros de tipo são detectados.</td></tr>
+    <tr><td>Síntese</td><td>Tipo da expressão construído dos tipos das subexpressões (int + int → int).</td></tr>
+    <tr><td>Inferência</td><td>Tipo deduzido pelo <b>uso</b>, sem declaração explícita (ML, Haskell).</td></tr>
+    <tr><td>Alargamento × estreitamento</td><td>Alargamento: sem perda (int → float). Estreitamento: pode perder informação (float → int).</td></tr>
+    <tr><td>Implícita × explícita</td><td>Implícita = coerção do compilador. Explícita = cast do programador.</td></tr>
+    <tr><td>Sobrecarga</td><td>Resolvida em <b>tempo de compilação</b>, pelos tipos dos argumentos/operandos.</td></tr>
+  </table></div>
+
+  <h3>Autoteste</h3>
+  <div class="bar"><button class="b" data-toggle="s3">Abrir/fechar todas</button></div>
+  <div id="s3-cards">
+    <details class="q"><summary>Por que gerar código intermediário em vez de ir direto ao objeto? <span class="qn">itens 1–4</span></summary><div><p>Portabilidade (m + n em vez de m × n), otimização independente da máquina e menos complexidade, ao custo de um passo a mais.</p></div></details>
+    <details class="q"><summary>Árvore de sintaxe × grafo de sintaxe. <span class="qn">item 7</span></summary><div><p>Na árvore, subexpressão repetida é replicada. No grafo (DAG), nós idênticos são compartilhados (um nó com mais de um pai).</p></div></details>
+    <details class="q"><summary>Que atividades fazem parte da verificação estática? <span class="qn">item 5</span></summary><div><p>Verificação de tipos, de fluxo de controle (ex.: <code>break</code> fora de laço), de unicidade e de nomes/escopo.</p></div></details>
+    <details class="q"><summary>Por que o código intermediário abstrai a máquina? <span class="qn">item 11</span></summary><div><p>Usa operações genéricas e temporários ilimitados, sem registradores, instruções ou tamanhos de palavra reais; esses detalhes entram só no gerador de código.</p></div></details>
+    <details class="q"><summary>Caracterize o código de 3 endereços. <span class="qn">item 12</span></summary><div><p>Até 3 endereços e 1 operador por instrução (<code>x := y op z</code>), com temporários e rótulos; representado por quádruplas ou triplas.</p></div></details>
+    <details class="q"><summary>O que é SSA? <span class="qn">item 16</span></summary><div><p>Cada variável atribuída uma só vez (versões p1, p2…), com funções φ nos pontos de junção.</p></div></details>
+    <details class="q"><summary>Qual a largura de <code>int[3][4]</code> com int = 4 bytes? <span class="qn">item 18</span></summary><div><p>3 × 4 × 4 = <b>48</b> bytes; tipo <code>array(3, array(4, integer))</code>.</p></div></details>
+    <details class="q"><summary>Estreitamento × alargamento; explícita × implícita. <span class="qn">item 22</span></summary><div><p>Alargamento não perde informação (int → float) e costuma ser implícito. Estreitamento pode perder (float → int) e em geral exige cast explícito.</p></div></details>
+    <details class="q"><summary>Quando a sobrecarga é resolvida? <span class="qn">item 23</span></summary><div><p>Em tempo de compilação.</p></div></details>
+  </div>
+
+  <h3>Sei fazer</h3>
+  <ul class="chk" data-group="s3">
+    <li><input type="checkbox" id="c-s3-1"><label for="c-s3-1">Desenhar árvore de derivação, árvore de sintaxe e grafo de uma sentença</label></li>
+    <li><input type="checkbox" id="c-s3-2"><label for="c-s3-2">Construir o DAG reaproveitando nós (Node/Leaf)</label></li>
+    <li><input type="checkbox" id="c-s3-3"><label for="c-s3-3">Traduzir expressão, <code>for</code>, <code>if</code>, vetor e chamada para 3 endereços</label></li>
+    <li><input type="checkbox" id="c-s3-4"><label for="c-s3-4">Converter código para SSA</label></li>
+    <li><input type="checkbox" id="c-s3-5"><label for="c-s3-5">Calcular tipo e largura de um vetor multidimensional com o SDT</label></li>
+  </ul>
+</section>
+
+<!-- ============================ S4 ============================ -->
+<section class="blk" id="s4">
+  <span class="tag">4 · Otimização e objeto</span>
+  <h2>Otimização de código e geração de código objeto</h2>
+  <p class="src">Atividade: <code>Exercicios_OtimizacaoCodigo_GeradorCodigo_GerenciaMemoria</code> (itens 1–12). Slides: 17 Síntese e 08 Geração de Código Objeto.</p>
+
+  <h3>Otimização</h3>
+  <ul>
+    <li><b>Cuidado principal:</b> nunca alterar a semântica do programa (resultado e efeitos colaterais).</li>
+    <li><b>Quando fazer:</b> é custosa (aumenta o tempo de compilação), então vale quando o código objeto realmente precisa ser eficiente: compilação final e trechos críticos (laços).</li>
+    <li>Gera código mais rápido/menor; raramente se garante o “ótimo”.</li>
+    <li><b>Escopo da análise:</b> local (trechos em linha reta), intermediário (função/módulo) e global.</li>
+  </ul>
+  <div class="tw"><table>
+    <tr><th>Técnica</th><th>Ideia</th><th>Exemplo</th></tr>
+    <tr><td>Propagação de constantes</td><td>Troca variável de valor conhecido pela constante</td><td><code>x=5; y=x+1</code> → <code>y=6</code></td></tr>
+    <tr><td>Dobramento de constantes</td><td>Calcula na compilação</td><td><code>z = 10 + 0</code> → <code>z = 10</code></td></tr>
+    <tr><td>Código morto / inalcançável</td><td>Remove o que nunca executa ou nunca é usado</td><td><code>if(0){…}</code></td></tr>
+    <tr><td>Atribuição morta</td><td>Valor sobrescrito antes de qualquer uso</td><td><code>y = 0; y = 15;</code></td></tr>
+    <tr><td>Subexpressão comum</td><td>Calcula uma vez e reutiliza</td><td><code>t1 = a+b</code> usado duas vezes</td></tr>
+    <tr><td>Propagação de cópias</td><td>Elimina variável que só copia outra</td><td><code>x=y; z=x</code> → <code>z=y</code></td></tr>
+    <tr><td>Invariante de laço</td><td>Move para fora do laço o que não muda</td><td><code>a = j+5</code> dentro do <code>for</code></td></tr>
+    <tr><td>Simplificação algébrica</td><td>Forma equivalente mais barata</td><td><code>x*1→x</code>, <code>2*x→x+x</code></td></tr>
+    <tr><td>Desvio desnecessário</td><td>Remove <code>goto</code> para a próxima instrução</td><td><code>goto L6; L6:</code></td></tr>
+  </table></div>
+  <div class="warn"><b>Cuidado com invariantes</b>
+    Mover <code>a = j + 5</code> para fora do laço “piora” se N = 0 (passa a executar 1 vez em vez de 0) e altera o valor de <code>a</code> se ela for usada depois do laço. Só vale quando o laço executa pelo menos uma vez (como o <code>for</code> com 100 iterações do item 3).</div>
+
+  <h4>Item 3 resolvido, passo a passo</h4>
+<pre><code>x=5; b=0; y=b; k=5; a=10; z=a+b;
+if(b){ a=5; z=x+3; }
+if(a){ z=x+a; y=x+a; k=x+a; b=x+a+5; z=x+a; }
+k=z; a=k;
+for(i=0;i&lt;100;i++){ y=a+b; z=soma(y,i); if(z>10) k=5; }</code></pre>
+  <ol class="steps">
+    <li><b>Propagação/dobramento:</b> x=5, b=0, a=10 são conhecidos → <code>y=0</code>, <code>z=10</code>.</li>
+    <li><b>Código morto:</b> <code>if(b)</code> = <code>if(0)</code> nunca executa → remover o bloco.</li>
+    <li><b>Condição constante:</b> <code>if(a)</code> com a=10 é sempre verdadeiro → remover o teste, manter o corpo.</li>
+    <li><b>Dentro do corpo:</b> z=15, y=15, k=15, <b>b=20</b>; o segundo <code>z=x+a</code> é redundante.</li>
+    <li><b>Atribuições mortas:</b> y=0, z=10 e k=5 são sobrescritas sem uso.</li>
+    <li><b>Propagação de cópias:</b> <code>k=z</code> → k=15; <code>a=k</code> → a=15.</li>
+    <li><b>Laço:</b> <code>y=a+b</code> = 35 é invariante → fora do laço. <code>soma()</code> fica (pode ter efeito colateral). O <code>z=15</code> anterior é morto.</li>
+  </ol>
+<pre><code>x = 5;  b = 20;  a = 15;  k = 15;
+y = 35;                         /* fora do laço */
+for (i = 0; i &lt; 100; i++) {
+    z = soma(35, i);
+    if (z > 10) k = 5;
+}</code></pre>
+
+  <h3>Geração de código objeto</h3>
+  <div class="grid">
+    <div class="card"><h4>Dependência</h4><p>Depende da <b>máquina-alvo</b>, não da linguagem fonte (a análise é que depende da linguagem). Função principal: traduzir o intermediário (otimizado) para código da máquina real.</p></div>
+    <div class="card"><h4>Requisitos</h4><p>Código <b>correto</b> e de alta qualidade; uso efetivo dos recursos da máquina; execução eficiente. Código ótimo é <b>indecidível</b>, então usam-se <b>heurísticas</b>.</p></div>
+    <div class="card"><h4>4 aspectos do projeto</h4><p>(1) forma do código objeto, (2) seleção de instruções, (3) alocação de registradores, (4) ordem de avaliação.</p></div>
+  </div>
+  <div class="tw"><table>
+    <tr><th>Forma do objeto</th><th>Característica</th></tr>
+    <tr><td>Absoluta</td><td>Fica em área fixa e executa na hora (<i>load and go</i>).</td></tr>
+    <tr><td>Relocável</td><td>Permite compilação separada; ligador-carregador junta os módulos.</td></tr>
+    <tr><td>Assembly</td><td>Facilita a geração, mas exige um passo extra (montagem).</td></tr>
+  </table></div>
+  <ul>
+    <li><b>Abordagem mais simples:</b> um <b>gabarito</b> (template) de instruções simbólicas para cada instrução intermediária, traduzida isoladamente. Pode gerar redundância.</li>
+    <li>O gabarito <b>muda por arquitetura</b>: instruções de 3, 2, 1 ou 0 endereços. Ex. <code>x := y + z</code>:</li>
+  </ul>
+<pre><code>3 end.:  ADD y, z, x          1 end.:  LOAD y      0 end. (pilha):  PUSH y
+2 end.:  MOVE Ri, y                    ADD z                            PUSH z
+         ADD  Ri, z                    STORE x                          ADD
+         MOVE x, Ri                                                     POP x</code></pre>
+  <ul>
+    <li><b>Registradores:</b> instruções com registradores são mais curtas e rápidas que com memória; alocação ótima é muito difícil.</li>
+    <li><b>Pipeline final:</b> compilador gera simbólico/objeto → <b>montador</b> (assembler) gera código de máquina relocável → <b>ligador</b> (linker) gera o <b>executável</b>. O resultado da compilação <u>não</u> é, por si só, o executável.</li>
+    <li><b>Formatos de instrução diferem</b> entre processadores (tamanho, campos, modos de endereçamento; RISC × CISC).</li>
+  </ul>
+<pre><code>a := b + c * d                  (máquina com LOAD/STORE/MUL/ADD, op fonte,destino)
+LOAD d, R0
+LOAD c, R1
+MUL  R0, R1      ; R1 = c * d
+LOAD b, R0
+ADD  R1, R0      ; R0 = b + c*d
+STORE R0, a</code></pre>
+
+  <h3>Autoteste</h3>
+  <div class="bar"><button class="b" data-toggle="s4">Abrir/fechar todas</button></div>
+  <div id="s4-cards">
+    <details class="q"><summary>Qual cuidado ter na otimização? <span class="qn">item 1</span></summary><div><p>Não alterar a semântica do programa.</p></div></details>
+    <details class="q"><summary>Otimização é custosa: quando fazer? <span class="qn">item 2</span></summary><div><p>Quando o ganho compensa o custo: compilação final e trechos críticos, não durante a depuração.</p></div></details>
+    <details class="q"><summary>A geração de código depende da linguagem de programação? <span class="qn">item 4</span></summary><div><p>Não; recebe código intermediário. Depende da máquina-alvo.</p></div></details>
+    <details class="q"><summary>Principal função e requisitos do gerador. <span class="qn">itens 5–6</span></summary><div><p>Traduzir o intermediário otimizado para o código objeto. Requisitos: correto, eficiente e de boa qualidade.</p></div></details>
+    <details class="q"><summary>Quem gera o executável? E quem faz a montagem? <span class="qn">itens 7, 12</span></summary><div><p>O <b>ligador</b> gera o executável. A montagem (simbólico → código de máquina) é feita pelo <b>montador</b>.</p></div></details>
+    <details class="q"><summary>O que faz a abordagem mais simples de geração? <span class="qn">item 8</span></summary><div><p>Traduz cada instrução intermediária isoladamente por um gabarito fixo, sem otimizar o contexto.</p></div></details>
+    <details class="q"><summary>A sequência de código de máquina e o formato de instrução são iguais em todo processador? <span class="qn">itens 9–10</span></summary><div><p>Não: cada processador tem seu conjunto de instruções, codificação, registradores e modos de endereçamento.</p></div></details>
+    <details class="q"><summary>O resultado da compilação é um executável? <span class="qn">item 11</span></summary><div><p>Não diretamente: gera assembly/objeto relocável; o executável surge após montagem e ligação.</p></div></details>
+  </div>
+
+  <h3>Sei fazer</h3>
+  <ul class="chk" data-group="s4">
+    <li><input type="checkbox" id="c-s4-1"><label for="c-s4-1">Aplicar e justificar cada otimização num trecho (como o item 3)</label></li>
+    <li><input type="checkbox" id="c-s4-2"><label for="c-s4-2">Explicar por que mover código para fora do laço pode ser perigoso</label></li>
+    <li><input type="checkbox" id="c-s4-3"><label for="c-s4-3">Traduzir <code>x := y + z</code> para máquinas de 3, 2, 1 e 0 endereços</label></li>
+    <li><input type="checkbox" id="c-s4-4"><label for="c-s4-4">Explicar o caminho código-fonte → executável (montador e ligador)</label></li>
+  </ul>
+</section>
+
+<!-- ============================ S5 ============================ -->
+<section class="blk" id="s5">
+  <span class="tag">5 · Memória</span>
+  <h2>Gerência de memória e ambiente de execução</h2>
+  <p class="src">Atividade: <code>Exercicios_OtimizacaoCodigo_GeradorCodigo_GerenciaMemoria</code> (itens 13–23). Slides: 07 Gerência de Memória e RunTime Environment.</p>
+
+  <h3>O essencial</h3>
+  <div class="grid">
+    <div class="card"><h4>Layout da memória</h4>
+      <pre style="margin:6px 0">código objeto
+área estática (globais)
+pilha  (cresce ↓)
+   … livre …
+heap   (cresce ↑)</pre></div>
+    <div class="card"><h4>3 formas de alocar</h4>
+      <p><b>Estática:</b> tamanho e tipo conhecidos na compilação (globais).</p>
+      <p><b>Pilha:</b> locais e parâmetros; só em execução, porque a ordem das chamadas depende da execução.</p>
+      <p><b>Heap:</b> sob controle do programa (<code>malloc/free</code>, <code>new</code>); estruturas por ponteiro.</p></div>
+    <div class="card"><h4>Quem faz o quê</h4>
+      <p>O <b>gerador de código</b> produz o código. A área de dados é reservada pelas rotinas do <b>gerente de memória</b> / ambiente de execução (e o SO).</p>
+      <p>Tipo define tamanho e alinhamento (pode haver <i>enchimento</i>).</p></div>
+  </div>
+
+  <h4>Registro de ativação (RA)</h4>
+  <p>Bloco empilhado a cada chamada e desempilhado no retorno. Contém: <b>valor retornado</b>, <b>parâmetros reais</b>, <b>elo de controle</b> (RA do chamador), <b>elo de acesso</b> (dados não locais), <b>estado da máquina</b> (PC e registradores), <b>variáveis locais</b> e <b>temporários</b>.</p>
+
+  <h4>Procedimento × função; parâmetros</h4>
+  <ul>
+    <li><b>Função</b> é um procedimento que <b>retorna valor</b>. Ambos têm nome, parâmetros formais (na definição) e corpo; parâmetros reais/atuais são os passados na chamada.</li>
+    <li>Passagem: <b>por valor</b> (in; cópia), <b>por resultado</b> (out), <b>valor-resultado</b> (inout, por cópia), <b>por referência</b> (inout; eficiente, mas permite <i>aliasing</i>, ex.: <code>sub1(x, x)</code>), <b>por nome</b> (substituição textual; flexível, mas ineficiente e confusa).</li>
+  </ul>
+
+  <h4>Árvore de ativação</h4>
+  <ul>
+    <li>Cada nó é uma <b>ativação</b>; a raiz é o programa principal (<code>main</code>).</li>
+    <li>Filhos de um nó = chamadas feitas por ele, em ordem, da esquerda para a direita.</li>
+    <li>O fluxo de controle é um percurso em profundidade: <b>chamadas = pré-ordem</b>, <b>retornos = pós-ordem</b>. A <b>pilha de controle</b> guarda o caminho da raiz até a ativação atual.</li>
+    <li>Tempos de vida de ativações ou são <b>aninhados</b> ou <b>disjuntos</b>.</li>
+  </ul>
+
+  <div class="tool" id="tool-act">
+    <h4>Simulador: árvore de ativação (item 21)</h4>
+    <div class="row">
+      <div><label for="ac-prog">Programa</label>
+        <select id="ac-prog">
+          <option value="fib">fibonacci(n)  (calcula fib(n-2) antes de fib(n-1))</option>
+          <option value="fat">fatorial(n)</option>
+          <option value="mdc">mdc(u, v)</option>
+        </select></div>
+      <div><label for="ac-n" id="ac-l1">n</label><input id="ac-n" type="number" value="6" min="0" max="9"></div>
+      <div id="ac-v-wrap" hidden><label for="ac-v">v</label><input id="ac-v" type="number" value="16" min="0" max="999"></div>
+    </div>
+    <div class="bar" style="margin-top:8px"><button class="b" id="ac-go" type="button">Gerar árvore</button></div>
+    <div class="out"><pre id="ac-out" style="max-height:360px;overflow:auto"></pre><div id="ac-stat" style="font-size:14px;color:var(--muted)"></div></div>
+  </div>
+
+  <h3>Fragmentação do heap (itens 22–23)</h3>
+  <ul>
+    <li><b>First-fit:</b> usa o <b>primeiro</b> bloco livre que cabe (rápido).</li>
+    <li><b>Best-fit:</b> usa o <b>menor</b> bloco que cabe (menos sobra, mas gera muitos fragmentos pequenos).</li>
+    <li><b>Worst-fit:</b> usa o maior bloco. Também: coalescência de livres vizinhos, compactação, <i>buddy system</i>.</li>
+    <li>Regra do item 23: se a sobra for menor que 8 bytes, o chunk <b>inteiro</b> é ocupado (fragmentação interna).</li>
+  </ul>
+
+  <div class="tool" id="tool-fit">
+    <h4>Simulador: first-fit × best-fit (item 23)</h4>
+    <div class="row">
+      <div><label for="ft-ch">Chunks livres (vírgulas)</label><input id="ft-ch" value="80,30,60,50,70,20,40"></div>
+      <div><label for="ft-rq">Pedidos, nessa ordem</label><input id="ft-rq" value="32,64,48,16"></div>
+      <div><label for="ft-min">Sobra mínima (bytes)</label><input id="ft-min" type="number" value="8" min="0"></div>
+    </div>
+    <div class="bar" style="margin-top:8px"><button class="b" id="ft-go" type="button">Simular</button></div>
+    <div class="out" id="ft-out"></div>
+  </div>
+
+  <h3>Autoteste</h3>
+  <div class="bar"><button class="b" data-toggle="s5">Abrir/fechar todas</button></div>
+  <div id="s5-cards">
+    <details class="q"><summary>Quem gera o código e quem reserva a área de dados? <span class="qn">item 13</span></summary><div><p>O gerador de código gera o código. A área de dados estática é reservada pelo compilador; pilha e heap pelo gerente de memória / ambiente de execução (e SO).</p></div></details>
+    <details class="q"><summary>Como o tipo do dado influencia o armazenamento? <span class="qn">item 14</span></summary><div><p>O tipo define tamanho, alinhamento e representação (elementares ocupam uma palavra; vetores e registros, posições contíguas).</p></div></details>
+    <details class="q"><summary>Toda alocação é estática? <span class="qn">item 15</span></summary><div><p>Não: só o que tem tamanho/tempo de vida conhecido na compilação. Locais vão para a pilha; dados dinâmicos para o heap.</p></div></details>
+    <details class="q"><summary>Como a memória de um programa é estruturada? <span class="qn">item 16</span></summary><div><p>Código, área estática, pilha e heap (pilha e heap crescem em sentidos contrários).</p></div></details>
+    <details class="q"><summary>Quais as três maneiras de reservar memória? <span class="qn">item 17</span></summary><div><p>Estática, em pilha e dinâmica (heap).</p></div></details>
+    <details class="q"><summary>O que é um registro de ativação? <span class="qn">item 18</span></summary><div><p>Bloco na pilha por chamada, com parâmetros, locais, retorno, elos de controle/acesso, estado da máquina e temporários.</p></div></details>
+    <details class="q"><summary>Como uma árvore de ativação é gerada? <span class="qn">item 20</span></summary><div><p>Cada chamada é um nó; raiz = main; filhos = chamadas feitas, em ordem; construída em profundidade durante a execução.</p></div></details>
+    <details class="q"><summary>Árvore de ativação de <code>mdc(8,16)</code> e <code>mdc(9,27)</code>. <span class="qn">item 21 (prog. 2)</span></summary><div><p>main → mdc(8,16) → mdc(16,8) → mdc(8,0) e main → mdc(9,27) → mdc(27,9) → mdc(9,0): duas cadeias de 3 ativações.</p></div></details>
+    <details class="q"><summary>Resultado do item 23 (first-fit e best-fit). <span class="qn">item 23</span></summary><div><p><b>First-fit:</b> sobram 14, 60, 50, 20, 40 (184 bytes). <b>Best-fit:</b> sobram 80, 30, 60, 8 (178 bytes), preservando os blocos grandes. (Use o simulador para ver passo a passo.)</p></div></details>
+  </div>
+
+  <h3>Sei fazer</h3>
+  <ul class="chk" data-group="s5">
+    <li><input type="checkbox" id="c-s5-1"><label for="c-s5-1">Desenhar o layout da memória e explicar as 3 alocações</label></li>
+    <li><input type="checkbox" id="c-s5-2"><label for="c-s5-2">Listar o conteúdo de um registro de ativação</label></li>
+    <li><input type="checkbox" id="c-s5-3"><label for="c-s5-3">Gerar a árvore de ativação de um programa recursivo</label></li>
+    <li><input type="checkbox" id="c-s5-4"><label for="c-s5-4">Simular first-fit e best-fit com a regra da sobra mínima</label></li>
+  </ul>
+</section>
+
+<!-- ============================ FIM ============================ -->
+<section class="blk" id="fim">
+  <span class="tag">Revisão final</span>
+  <h2>Cola de regras (leia antes da prova)</h2>
+  <div class="tw"><table>
+    <tr><th>Tema</th><th>Regra de bolso</th></tr>
+    <tr><td>Sintetizado / herdado</td><td>Sintetizado: dos filhos. Herdado: do pai e irmãos à esquerda. Terminal: só sintetizado.</td></tr>
+    <tr><td>S / L-atribuída</td><td>S: só sintetizados (LR, pós-ordem). L: herdado nunca olha irmão à direita (LL, profundidade).</td></tr>
+    <tr><td>Grafo de dependência</td><td>Aresta a → b: b usa a. Ordem = topológica. Ciclo = circular, sem solução.</td></tr>
+    <tr><td>Contenção de escopo</td><td>A contém B ⇔ entrada(A) ≤ entrada(B) e saída(B) ≤ saída(A).</td></tr>
+    <tr><td>Sombreamento</td><td>Vale a declaração mais próxima; redeclarar no mesmo escopo é erro.</td></tr>
+    <tr><td>DAG</td><td>Reaproveite nó idêntico (mesmo operador e mesmos filhos, na ordem).</td></tr>
+    <tr><td>3 endereços</td><td>1 operador, 3 endereços, temporários; vetor: <code>t := i * largura; a[t]</code>; saída de laço com teste invertido.</td></tr>
+    <tr><td>SSA</td><td>Uma atribuição por variável; versões numeradas; φ nas junções.</td></tr>
+    <tr><td>Largura de vetor</td><td>Produto das dimensões × largura do elemento (3 × 4 × 4 = 48).</td></tr>
+    <tr><td>Otimização</td><td>Nunca muda a semântica. Constantes → dobrar → código morto → cópias → invariante.</td></tr>
+    <tr><td>Do código ao executável</td><td>Gerador → (assembly) → montador → objeto relocável → ligador → executável.</td></tr>
+    <tr><td>Memória</td><td>Código | estática | pilha ↓ … ↑ heap. RA por chamada na pilha.</td></tr>
+    <tr><td>Árvore de ativação</td><td>Raiz main; chamadas em pré-ordem, retornos em pós-ordem.</td></tr>
+    <tr><td>First × best-fit</td><td>First: primeiro que cabe. Best: menor que cabe. Sobra &lt; mínimo → ocupa o chunk inteiro.</td></tr>
+  </table></div>
+
+  <h3>Itens que mais confundem</h3>
+  <ul>
+    <li>Marching Cubes e Homem Visível (novos exercícios 25 e 68): não estão no material de compiladores.</li>
+    <li>Item 8 da lista de código intermediário: o enunciado não traz a sentença; o slide usa <code>a = b*c + b*c</code> com a mesma gramática.</li>
+    <li>Item 78 dos novos exercícios (arestas pontilhadas × sólidas): os PDFs não mostram a figura; o padrão usual é pontilhada = estrutura da árvore, sólida = dependência.</li>
+    <li>O resultado da compilação não é o executável; quem o gera é o ligador.</li>
+  </ul>
+
+  <footer>
+    Guia montado a partir de <code>2_Bim_tudo (2).zip</code>. Respostas completas das listas: <a href="Respostas_Compiladores.pdf">Respostas_Compiladores.pdf</a>. Seu progresso fica salvo só neste navegador.
+  </footer>
+</section>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  /* ---------- tema ---------- */
+  var root=document.documentElement, tb=document.getElementById("theme");
+  function store(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+  function load(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  var saved=load("gc-theme"); if(saved) root.setAttribute("data-theme",saved);
+  tb.addEventListener("click",function(){
+    var cur=root.getAttribute("data-theme");
+    if(!cur) cur=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
+    var nx=cur==="dark"?"light":"dark"; root.setAttribute("data-theme",nx); store("gc-theme",nx);
+  });
+
+  /* ---------- progresso ---------- */
+  var boxes=[].slice.call(document.querySelectorAll(".chk input[type=checkbox]"));
+  function upd(){
+    var n=boxes.filter(function(b){return b.checked}).length, pct=boxes.length?Math.round(100*n/boxes.length):0;
+    document.getElementById("pbar").style.width=pct+"%";
+    document.getElementById("ptxt").textContent=pct+"% concluído ("+n+"/"+boxes.length+")";
+  }
+  boxes.forEach(function(b){
+    if(load("gc-"+b.id)==="1") b.checked=true;
+    b.addEventListener("change",function(){store("gc-"+b.id,b.checked?"1":"0");upd();});
+  });
+  upd();
+
+  /* ---------- abrir/fechar todas ---------- */
+  [].forEach.call(document.querySelectorAll("[data-toggle]"),function(btn){
+    btn.addEventListener("click",function(){
+      var ds=[].slice.call(document.querySelectorAll("#"+btn.getAttribute("data-toggle")+"-cards details"));
+      var any=ds.some(function(d){return !d.open});
+      ds.forEach(function(d){d.open=any});
+    });
+  });
+
+  /* ---------- chip ativo ---------- */
+  var links=[].slice.call(document.querySelectorAll("#chips a"));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute("href"))});
+  function onScroll(){
+    var y=window.scrollY+110, idx=0;
+    secs.forEach(function(s,i){ if(s && s.offsetTop<=y) idx=i; });
+    links.forEach(function(a,i){a.classList.toggle("on",i===idx)});
+  }
+  addEventListener("scroll",onScroll,{passive:true}); onScroll();
+
+  function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+  /* ---------- simulador de escopos ---------- */
+  var scopes=[];
+  function analyze(src){
+    var s=src.replace(/\/\*[\s\S]*?\*\//g,"").replace(/\/\/.*$/gm,"").replace(/"(?:\\.|[^"\\])*"/g,'""');
+    var counter=0, list=[], stack=[], buf="";
+    function open(name,parent){
+      counter++;
+      list.push({id:list.length,name:name,parent:parent,entrada:counter,saida:null,depth:parent===null?0:list[parent].depth+1});
+      stack.push(list.length-1);
+    }
+    open("global",null);
+    for(var i=0;i<s.length;i++){
+      var ch=s[i];
+      if(ch==="{"){
+        var nm=buf.replace(/\s+/g," ").trim(); if(!nm) nm="bloco"; if(nm.length>44) nm=nm.slice(0,41)+"...";
+        open(nm,stack[stack.length-1]); buf="";
+      } else if(ch==="}"){
+        if(stack.length<=1) return {error:"Há um } sem { correspondente."};
+        counter++; list[stack.pop()].saida=counter; buf="";
+      } else if(ch===";"){ buf=""; }
+      else buf+=ch;
+    }
+    if(stack.length>1) return {error:"Há { sem } correspondente."};
+    counter++; list[0].saida=counter;
+    return {list:list};
+  }
+  function runScope(){
+    var r=analyze(document.getElementById("sc-src").value), out=document.getElementById("sc-out"), cont=document.getElementById("sc-cont");
+    if(r.error){out.innerHTML='<div class="warn"><b>Erro</b>'+esc(r.error)+'</div>';cont.hidden=true;return;}
+    scopes=r.list;
+    var h='<div class="tw"><table><tr><th>#</th><th>Escopo</th><th>Pai</th><th>Entrada</th><th>Saída</th></tr>';
+    scopes.forEach(function(s){
+      h+='<tr><td>'+(s.id+1)+'</td><td style="padding-left:'+(10+s.depth*16)+'px"><code>'+esc(s.name)+'</code></td><td>'+(s.parent===null?'-':(s.parent+1))+'</td><td>'+s.entrada+'</td><td>'+s.saida+'</td></tr>';
+    });
+    out.innerHTML=h+'</table></div><p style="font-size:13.5px;color:var(--muted)">A coluna Escopo é indentada pela profundidade (árvore de escopos). “#” é a ordem de abertura.</p>';
+    var opts=scopes.map(function(s){return '<option value="'+s.id+'">'+(s.id+1)+' · '+esc(s.name)+' ('+s.entrada+'/'+s.saida+')</option>'}).join("");
+    document.getElementById("sc-a").innerHTML=opts; document.getElementById("sc-b").innerHTML=opts;
+    if(scopes.length>1) document.getElementById("sc-b").value=String(scopes.length-1);
+    cont.hidden=false; runContain();
+  }
+  function runContain(){
+    var a=scopes[+document.getElementById("sc-a").value], b=scopes[+document.getElementById("sc-b").value];
+    if(!a||!b) return;
+    var c1=a.entrada<=b.entrada, c2=b.saida<=a.saida, ok=c1&&c2;
+    document.getElementById("sc-res").innerHTML=
+      '<p style="margin:0 0 6px"><code>entrada(A) ≤ entrada(B)</code>: '+a.entrada+' ≤ '+b.entrada+' → <b>'+(c1?"V":"F")+'</b><br>'+
+      '<code>saída(B) ≤ saída(A)</code>: '+b.saida+' ≤ '+a.saida+' → <b>'+(c2?"V":"F")+'</b></p>'+
+      '<span class="pill '+(ok?'y':'n')+'">'+(ok?'A contém B: a declaração em A é visível em B (salvo sombreamento)':'A não contém B: a declaração em A não é visível em B')+'</span>';
+  }
+  document.getElementById("sc-go").addEventListener("click",runScope);
+  document.getElementById("sc-a").addEventListener("change",runContain);
+  document.getElementById("sc-b").addEventListener("change",runContain);
+  runScope();
+
+  /* ---------- árvore de ativação ---------- */
+  var progSel=document.getElementById("ac-prog");
+  function syncAct(){
+    var p=progSel.value, v=document.getElementById("ac-v-wrap");
+    document.getElementById("ac-l1").textContent=p==="mdc"?"u":"n";
+    v.hidden=p!=="mdc";
+    var n=document.getElementById("ac-n");
+    if(p==="mdc"){n.value=8;n.max=999;document.getElementById("ac-v").value=16;}
+    else{n.max=9; if(+n.value>9) n.value=6; if(p==="fat") n.value=8; else n.value=6;}
+  }
+  progSel.addEventListener("change",function(){syncAct();runAct();});
+  function runAct(){
+    var p=progSel.value, n=Math.max(0,Math.floor(+document.getElementById("ac-n").value||0)), v=Math.max(0,Math.floor(+document.getElementById("ac-v").value||0));
+    var lines=[], count=0, maxd=0;
+    function visit(label,children,prefix,last,root,depth){
+      count++; if(depth>maxd) maxd=depth;
+      lines.push(prefix+(root?"":(last?"`-- ":"|-- "))+label);
+      var cp=prefix+(root?"":(last?"    ":"|   "));
+      children.forEach(function(c,i){ visit(c.label,c.kids,cp,i===children.length-1,false,depth+1); });
+    }
+    function fib(k){ var kids=[]; if(k>=2){kids.push(fib(k-2));kids.push(fib(k-1));} return {label:"fibonacci("+k+")",kids:kids}; }
+    function fat(k){ var kids=[]; if(!(k===0||k===1)) kids.push(fat(k-1)); return {label:"fatorial("+k+")",kids:kids}; }
+    function mdc(u,w){ var kids=[]; if(w!==0) kids.push(mdc(w,u%w)); return {label:"mdc("+u+", "+w+")",kids:kids}; }
+    var mainKids;
+    if(p==="fib"){ n=Math.min(n,9); mainKids=[fib(n)]; }
+    else if(p==="fat"){ n=Math.min(n,9); mainKids=[fat(n)]; }
+    else { mainKids=[mdc(n,v)]; }
+    visit("main",mainKids,"",true,true,0);
+    document.getElementById("ac-out").textContent=lines.join("\n");
+    document.getElementById("ac-stat").textContent="Ativações (com main): "+count+" · profundidade máxima da pilha de controle: "+(maxd+1)+" (contando main)";
+  }
+  document.getElementById("ac-go").addEventListener("click",runAct);
+  syncAct(); runAct();
+
+  /* ---------- first-fit x best-fit ---------- */
+  function nums(s){return s.split(/[ ,;]+/).map(Number).filter(function(x){return x>0&&isFinite(x)});}
+  function simulate(chunks,reqs,minLeft,policy){
+    var free=chunks.map(function(c){return c;}), steps=[];
+    reqs.forEach(function(r){
+      var idx=-1;
+      for(var i=0;i<free.length;i++){
+        if(free[i]===null||free[i]<r) continue;
+        if(policy==="first"){idx=i;break;}
+        if(idx===-1||free[i]<free[idx]) idx=i;
+      }
+      if(idx===-1){steps.push({r:r,fail:true,state:free.slice()});return;}
+      var size=free[idx], left=size-r, note;
+      if(left<minLeft){ free[idx]=null; note=left>0?("sobra "+left+" &lt; "+minLeft+": ocupa o chunk inteiro ("+size+")"):"cabe exato"; }
+      else { free[idx]=left; note="sobra "+left; }
+      steps.push({r:r,from:size,note:note,state:free.slice()});
+    });
+    return {free:free,steps:steps};
+  }
+  function fmtState(a){return a.map(function(x){return x===null?"<s>ocupado</s>":x}).join(" · ");}
+  function runFit(){
+    var ch=nums(document.getElementById("ft-ch").value), rq=nums(document.getElementById("ft-rq").value), mn=Math.max(0,+document.getElementById("ft-min").value||0);
+    var html="";
+    [["first","First-fit"],["best","Best-fit"]].forEach(function(pp){
+      var res=simulate(ch,rq,mn,pp[0]);
+      html+='<h4 style="margin-top:14px">'+pp[1]+'</h4><div class="tw"><table><tr><th>Pedido</th><th>Chunk usado</th><th>Resultado</th><th>Chunks após o pedido</th></tr>';
+      res.steps.forEach(function(s){
+        if(s.fail) html+='<tr><td>'+s.r+'</td><td colspan="3">sem chunk que caiba</td></tr>';
+        else html+='<tr><td>'+s.r+'</td><td>'+s.from+'</td><td>'+s.note+'</td><td>'+fmtState(s.state)+'</td></tr>';
+      });
+      var rest=res.free.filter(function(x){return x!==null}), tot=rest.reduce(function(a,b){return a+b},0);
+      html+='</table></div><div class="ok" style="margin:6px 0"><b>Livres ao final</b>'+(rest.length?rest.join(", "):"nenhum")+' (total '+tot+' bytes)</div>';
+    });
+    document.getElementById("ft-out").innerHTML=html;
+  }
+  document.getElementById("ft-go").addEventListener("click",runFit);
+  runFit();
+})();
+</script>
+</body>
+</html>
