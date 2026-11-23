@@ -110,6 +110,9 @@ button.b:disabled{opacity:.45;cursor:default}
 .stackv{display:flex;flex-direction:column;gap:4px;min-height:50px;max-width:340px}
 .fr{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:4px 10px;font-family:ui-monospace,Consolas,monospace;font-size:13.5px}
 .fr.top{border-color:var(--accent);background:var(--accent-soft);font-weight:700}
+table.lrt th,table.lrt td{text-align:center;font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:14px;padding:5px 9px}
+table.lrt .sep{border-left:3px solid var(--accent)}
+table.lrt td.cf{background:var(--warn-soft);color:var(--warn);font-weight:700}
 dl.gl dt{font-weight:700;margin-top:10px}
 dl.gl dd{margin:0 0 0 0;color:var(--ink)}
 footer{margin-top:60px;color:var(--muted);font-size:13.5px;border-top:1px solid var(--line);padding-top:14px}
@@ -134,6 +137,7 @@ footer{margin-top:60px;color:var(--muted);font-size:13.5px;border-top:1px solid 
       <a href="#s3">3 · Cód. intermediário</a>
       <a href="#s4">4 · Otimização e objeto</a>
       <a href="#s5">5 · Memória</a>
+      <a href="#s6">6 · Parser LR</a>
       <a href="#glos">Glossário</a>
       <a href="#fim">Revisão</a>
     </nav>
@@ -164,7 +168,8 @@ footer{margin-top:60px;color:var(--muted);font-size:13.5px;border-top:1px solid 
     <tr><td>3</td><td><a href="#s2">Aula 2</a>: escopo de variáveis</td><td>exercicios_escopo_variaveis_compiladores_Aluno</td></tr>
     <tr><td>4</td><td><a href="#s3">Aula 3</a>: código intermediário (3 endereços, DAG, SSA, tipos)</td><td>Exerc_GeracaoCodigoIntermediario</td></tr>
     <tr><td>5</td><td><a href="#s4">Aula 4</a> e <a href="#s5">Aula 5</a>: otimização, código objeto, memória</td><td>Exercicios_OtimizacaoCodigo_GeradorCodigo_GerenciaMemoria</td></tr>
-    <tr><td>6</td><td><a href="#fim">Revisão</a>: cola de regras e itens que mais confundem</td><td>Todas</td></tr>
+    <tr><td>6</td><td><a href="#s6">Aula 6 (extra)</a>: análise sintática ascendente LR e a tabela ação/desvio</td><td>Não está no zip: conteúdo complementar</td></tr>
+    <tr><td>7</td><td><a href="#fim">Revisão</a>: cola de regras e itens que mais confundem</td><td>Todas</td></tr>
   </table></div>
   <p class="src">Material do zip: slides Geovane (análise semântica p1/p2 e Síntese), Aula 12 do Prof. Celso, 05 Geração de Código Intermediário, Compiladores14, IntCodeGen, 07 Gerência de Memória, 08 Geração de Código Objeto e RunTime Environment. As respostas completas das 4 listas estão em <a href="Respostas_Compiladores.pdf">Respostas_Compiladores.pdf</a>.</p>
 </section>
@@ -1531,6 +1536,271 @@ Por REFERÊNCIA:  formais são o próprio x e y.  Depois:       x = 2,  y = 1   
   </ul>
 </section>
 
+<!-- ======================= AULA 6 (EXTRA): PARSER LR ======================= -->
+<section class="blk" id="s6">
+  <span class="tag">Aula 6 · extra</span>
+  <h2>Análise sintática ascendente (LR) e a tabela ação/desvio</h2>
+  <p class="src">Este assunto <b>não está no zip</b>: foi acrescentado a pedido. O conteúdo segue o que os livros-texto de compiladores ensinam (por exemplo, o “livro do dragão”). Confira a notação com o material do seu professor, porque a forma de escrever a pilha e a tabela varia um pouco de uma fonte para outra.</p>
+  <div class="mini"><b>Nesta aula</b>
+    <ol><li>Onde o parser entra e o que “bottom-up” quer dizer</li><li>Shift, reduce e o handle</li><li>Itens LR e o autômato de estados</li><li>A tabela ação/desvio (como montar)</li><li>Como o parser usa a tabela (passo a passo)</li><li>SLR, LALR, LR(1) e os conflitos</li></ol></div>
+
+  <h3>6.1 Onde o parser entra e o que “bottom-up” quer dizer</h3>
+  <div class="flow">
+    <span class="bx">texto-fonte</span><span class="ar">→</span>
+    <span class="bx">léxico (tokens)</span><span class="ar">→</span>
+    <span class="bx"><b>sintático (parser)</b></span><span class="ar">→</span>
+    <span class="bx">árvore de derivação</span><span class="ar">→</span>
+    <span class="bx">semântico</span>
+  </div>
+  <p>O analisador sintático recebe a <b>sequência de tokens</b> e responde a duas perguntas: (1) essa sequência obedece à gramática? (2) qual é a árvore de derivação dela? Existem duas famílias de parsers, que diferem na direção em que montam a árvore:</p>
+  <div class="grid">
+    <div class="card"><h4>Top-down (LL)</h4><p>Começa no <b>símbolo inicial</b> e vai expandindo produções até chegar nos tokens. Constrói a árvore da <b>raiz para as folhas</b>. Simula a derivação mais à <b>esquerda</b>.</p></div>
+    <div class="card"><h4>Bottom-up (LR)</h4><p>Começa nos <b>tokens</b> e vai juntando pedaços em símbolos maiores até chegar no símbolo inicial. Constrói a árvore das <b>folhas para a raiz</b>. Faz a derivação mais à <b>direita ao contrário</b>.</p></div>
+  </div>
+  <div class="idea"><b>Analogia: peças de montar</b>
+    <p>Você tem as peças soltas (os tokens). A cada passo, ou você <b>pega mais uma peça</b> da caixa (<i>shift</i>), ou percebe que as últimas peças que pegou formam uma peça maior e as <b>troca por ela</b> (<i>reduce</i>). Quando sobra uma única peça, o símbolo inicial, a montagem deu certo.</p></div>
+  <div class="tw"><table>
+    <tr><th></th><th>LL (top-down)</th><th>LR (bottom-up)</th></tr>
+    <tr><td>Lê a entrada</td><td colspan="2">da esquerda para a direita (o primeiro L dos dois)</td></tr>
+    <tr><td>Derivação</td><td>mais à esquerda</td><td>mais à direita, ao contrário (o R)</td></tr>
+    <tr><td>Árvore</td><td>da raiz para as folhas</td><td>das folhas para a raiz</td></tr>
+    <tr><td>Recursão à esquerda</td><td>precisa ser eliminada</td><td>não atrapalha (<code>E → E + T</code> é natural)</td></tr>
+    <tr><td>Poder</td><td>reconhece menos gramáticas</td><td>reconhece mais gramáticas (todas as LL e outras)</td></tr>
+    <tr><td>Tabela</td><td>M[não-terminal, terminal]</td><td>ACTION[estado, terminal] e GOTO[estado, não-terminal]</td></tr>
+    <tr><td>Ferramentas típicas</td><td>ANTLR, JavaCC, parsers escritos à mão</td><td>Yacc, Bison</td></tr>
+  </table></div>
+  <div class="note"><b>Ligação com a Aula 1</b>
+    <p>Lembra que “S-atribuída” combina com LR? O parser LR só <b>fecha</b> um nó da árvore quando reduz, e nesse momento todos os filhos já estão prontos. Por isso as ações semânticas de uma SDT pós-fixada rodam exatamente na <b>redução</b>, e os atributos sintetizados (que vêm dos filhos) cabem naturalmente.</p></div>
+
+  <h3>6.2 Shift, reduce e o handle</h3>
+  <p>Vamos usar uma gramática minúscula durante toda a aula, para você enxergar cada peça:</p>
+<pre><code>(1)  E → E + id
+(2)  E → id</code></pre>
+  <p>A derivação mais à direita de <code>id + id</code> é <code>E ⇒ E + id ⇒ id + id</code>. O parser LR faz o caminho <b>inverso</b>: <code>id + id</code> → <code>E + id</code> → <code>E</code>. Ele usa uma <b>pilha</b> e quatro operações:</p>
+  <div class="grid">
+    <div class="card"><h4>shift</h4><p>Empilha o token atual e passa para o próximo.</p></div>
+    <div class="card"><h4>reduce</h4><p>O lado direito de uma produção está no topo da pilha: troque-o pelo lado esquerdo.</p></div>
+    <div class="card"><h4>accept</h4><p>A entrada acabou e a pilha tem só o símbolo inicial: sucesso.</p></div>
+    <div class="card"><h4>erro</h4><p>Nenhuma operação é possível: erro de sintaxe.</p></div>
+  </div>
+  <h4>Sem estados ainda: só a ideia</h4>
+<pre><code>pilha         entrada       ação
+$             id + id $     shift
+$ id          + id $        reduce  E → id
+$ E           + id $        shift
+$ E +         id $          shift
+$ E + id      $             reduce  E → E + id
+$ E           $             accept</code></pre>
+  <p>Duas perguntas aparecem a cada passo, e a parte difícil do LR é respondê-las <b>sem chutar</b>:</p>
+  <ol>
+    <li>Agora é hora de <b>empilhar</b> (shift) ou de <b>reduzir</b> (reduce)?</li>
+    <li>Se for reduzir, <b>qual</b> pedaço do topo e por <b>qual produção</b>?</li>
+  </ol>
+  <div class="warn"><b>Handle (cabo)</b>
+    <p>É o trecho do topo da pilha que, se reduzido <b>agora</b>, mantém você no caminho da derivação mais à direita ao contrário. Repare: no começo, o <b>segundo</b> <code>id</code> também casa com <code>E → id</code>, mas reduzi-lo daria <code>id + E</code>, que a gramática não gera. Só o primeiro <code>id</code> é o handle. A tabela LR existe para decidir isso automaticamente.</p></div>
+
+  <h3>6.3 Itens LR e o autômato de estados</h3>
+  <p>Para decidir sem enxergar o futuro, o parser precisa <b>lembrar o que já leu</b>. Isso é um <b>item LR</b>: uma produção com um <b>ponto</b> marcando até onde ela já foi reconhecida.</p>
+<pre><code>E → · E + id      ainda não li nada desta produção
+E → E · + id      já li um E; falta + id
+E → E + · id      já li E +; falta id
+E → E + id ·      li tudo: posso REDUZIR (item completo)</code></pre>
+  <p>Um <b>estado</b> do parser é um <b>conjunto de itens</b> (tudo o que pode estar acontecendo ao mesmo tempo). Dois operadores constroem os conjuntos:</p>
+  <ul>
+    <li><b>Closure (fecho):</b> se o ponto está antes de um <b>não-terminal</b> A, acrescente ao conjunto todas as produções de A com o ponto no início. (“Se vou ler um A agora, ele pode começar de qualquer uma das produções de A.”) Repita até não entrar nada novo.</li>
+    <li><b>Goto(I, X):</b> pegue os itens de I que têm X logo depois do ponto, <b>avance o ponto</b> sobre X e aplique closure. O resultado é o estado alcançado ao ler X.</li>
+  </ul>
+  <h4>Construindo o autômato (passo a passo)</h4>
+  <ol class="steps">
+    <li><b>Aumente a gramática:</b> acrescente <code>E' → E</code> (produção 0). Ela serve só para saber quando aceitar.</li>
+    <li><b>Estado inicial I0</b> = closure de <code>E' → · E</code>. Como o ponto está antes de E, entram <code>E → · E + id</code> e <code>E → · id</code>.</li>
+    <li>Para cada símbolo que aparece logo depois de um ponto em I0 (<code>E</code> e <code>id</code>), calcule o goto. Cada resultado novo vira um estado.</li>
+    <li>Repita para os estados novos, até não aparecer nenhum conjunto inédito.</li>
+  </ol>
+<pre><code>I0:  E' → · E          com E:  I1
+     E  → · E + id     com id: I2
+     E  → · id
+
+I1:  E' → E ·          (aceitar quando a entrada acabar)
+     E  → E · + id     com +:  I3
+
+I2:  E → id ·          (item completo: reduzir pela produção 2)
+
+I3:  E → E + · id      com id: I4
+
+I4:  E → E + id ·      (item completo: reduzir pela produção 1)</code></pre>
+
+  <h3>6.4 A tabela ação/desvio</h3>
+  <p>A tabela é o autômato acima escrito em forma de grade. Ela tem <b>duas partes</b>:</p>
+  <div class="grid">
+    <div class="card"><h4>AÇÃO[estado, terminal]</h4><p>Consultada com o <b>token atual</b>. Diz o que fazer: <code>sN</code> (shift e vá para o estado N), <code>rK</code> (reduza pela produção K), <code>acc</code> (aceite) ou <b>vazio</b> (erro).</p></div>
+    <div class="card"><h4>DESVIO[estado, não-terminal] (GOTO)</h4><p>Consultada só <b>depois de uma redução</b>: diz para qual estado ir quando um não-terminal acabou de ser formado. Terminais nunca usam o goto.</p></div>
+  </div>
+  <h4>Regras para preencher (modelo SLR)</h4>
+  <div class="tw"><table>
+    <tr><th>Situação no autômato</th><th>O que escrever</th></tr>
+    <tr><td>Transição do estado i para j lendo um <b>terminal</b> a</td><td>AÇÃO[i, a] = <code>sj</code></td></tr>
+    <tr><td>Transição do estado i para j lendo um <b>não-terminal</b> A</td><td>DESVIO[i, A] = <code>j</code></td></tr>
+    <tr><td>Item completo <code>A → α ·</code> no estado i (A diferente de E')</td><td>AÇÃO[i, a] = <code>rK</code> para cada <code>a</code> em <b>FOLLOW(A)</b>, onde K é o número da produção</td></tr>
+    <tr><td>Item <code>E' → E ·</code> no estado i</td><td>AÇÃO[i, <code>$</code>] = <code>acc</code></td></tr>
+    <tr><td>Qualquer outra célula</td><td>vazia (erro)</td></tr>
+  </table></div>
+  <p>FOLLOW(A) é o conjunto de terminais que podem aparecer logo depois de A em alguma derivação (e <code>$</code> se A pode terminar a entrada). Aqui, <code>FOLLOW(E) = { +, $ }</code>, porque depois de um E vem <code>+</code> (em <code>E + id</code>) ou o fim da entrada.</p>
+  <h4>A tabela da gramática pequena</h4>
+  <div class="tw"><table class="lrt">
+    <tr><th rowspan="2">Estado</th><th colspan="3">AÇÃO</th><th class="sep">DESVIO</th></tr>
+    <tr><th>+</th><th>id</th><th>$</th><th class="sep">E</th></tr>
+    <tr><td><b>0</b></td><td></td><td>s2</td><td></td><td class="sep">1</td></tr>
+    <tr><td><b>1</b></td><td>s3</td><td></td><td>acc</td><td class="sep"></td></tr>
+    <tr><td><b>2</b></td><td>r2</td><td></td><td>r2</td><td class="sep"></td></tr>
+    <tr><td><b>3</b></td><td></td><td>s4</td><td></td><td class="sep"></td></tr>
+    <tr><td><b>4</b></td><td>r1</td><td></td><td>r1</td><td class="sep"></td></tr>
+  </table></div>
+  <p>Como ler: <code>s2</code> na linha 0, coluna <code>id</code>, vem da transição I0 –id→ I2. A linha 2 tem <code>r2</code> em <code>+</code> e em <code>$</code> porque I2 tem o item completo <code>E → id ·</code> e FOLLOW(E) = {+, $}. A coluna E da linha 0 tem <code>1</code> porque I0 –E→ I1.</p>
+
+  <h3>6.5 Como o parser usa a tabela</h3>
+  <p>A pilha agora guarda <b>pares</b> (símbolo, estado). O estado do topo é o “resumo” de tudo o que já foi lido.</p>
+  <ol class="steps">
+    <li>Comece com a pilha contendo só o estado <code>0</code>. O token atual é o primeiro da entrada (que termina em <code>$</code>).</li>
+    <li>Seja <code>s</code> o estado do topo e <code>a</code> o token atual. Consulte <b>AÇÃO[s, a]</b>.</li>
+    <li><code>sN</code> (shift): empilhe <code>a</code> e o estado <code>N</code>; passe para o próximo token.</li>
+    <li><code>rK</code> (reduce), com a produção K: <code>A → β</code>:
+      <ul><li>desempilhe <b>|β| pares</b> (um par para cada símbolo de β);</li>
+          <li>olhe o estado <code>t</code> que ficou no topo;</li>
+          <li>empilhe <code>A</code> e o estado <b>DESVIO[t, A]</b>. <b>Não</b> avance na entrada.</li></ul></li>
+    <li><code>acc</code>: aceite e pare. Célula vazia: erro de sintaxe.</li>
+  </ol>
+  <h4>Analisando <code>id + id</code></h4>
+  <div class="tw"><table>
+    <tr><th>Pilha</th><th>Entrada</th><th>Ação</th><th>O que aconteceu</th></tr>
+    <tr><td><code>0</code></td><td><code>id + id $</code></td><td>s2</td><td>AÇÃO[0, id] = s2: empilha <code>id 2</code></td></tr>
+    <tr><td><code>0 id 2</code></td><td><code>+ id $</code></td><td>r2</td><td>E → id: desempilha 1 par; topo = 0; DESVIO[0, E] = 1; empilha <code>E 1</code></td></tr>
+    <tr><td><code>0 E 1</code></td><td><code>+ id $</code></td><td>s3</td><td>AÇÃO[1, +] = s3: empilha <code>+ 3</code></td></tr>
+    <tr><td><code>0 E 1 + 3</code></td><td><code>id $</code></td><td>s4</td><td>AÇÃO[3, id] = s4: empilha <code>id 4</code></td></tr>
+    <tr><td><code>0 E 1 + 3 id 4</code></td><td><code>$</code></td><td>r1</td><td>E → E + id: desempilha <b>3 pares</b>; topo = 0; DESVIO[0, E] = 1; empilha <code>E 1</code></td></tr>
+    <tr><td><code>0 E 1</code></td><td><code>$</code></td><td>acc</td><td>AÇÃO[1, $] = acc: entrada aceita</td></tr>
+  </table></div>
+  <div class="warn"><b>Erros clássicos na prova</b>
+    <ul>
+      <li>Desempilhar a quantidade errada: são <b>|β| pares</b> (símbolo e estado), não só |β| itens soltos.</li>
+      <li>Calcular o estado novo a partir do estado que foi reduzido. O correto é o <b>DESVIO do estado que ficou no topo</b> depois de desempilhar.</li>
+      <li>Avançar a entrada numa redução. Só o <b>shift</b> consome token.</li>
+      <li>Reduzir por <code>A → ε</code>: desempilha <b>0</b> pares e empilha A direto, com DESVIO do topo atual.</li>
+      <li>Algumas fontes guardam <b>só os estados</b> na pilha. É equivalente: o símbolo de cada par é sempre o que leva ao estado seguinte.</li>
+    </ul></div>
+
+  <h3>6.6 SLR, LALR, LR(1) e os conflitos</h3>
+  <p>Todas as variantes usam o mesmo mecanismo (itens, pilha, shift e reduce). Mudam só <b>em quais colunas</b> o <code>rK</code> de um item completo é escrito:</p>
+  <div class="tw"><table>
+    <tr><th>Variante</th><th>Onde coloca <code>rK</code></th><th>Nº de estados</th><th>Poder</th><th>Onde aparece</th></tr>
+    <tr><td>LR(0)</td><td>em <b>todas</b> as colunas de terminais</td><td>pequeno</td><td>o menor</td><td>só em aula</td></tr>
+    <tr><td>SLR(1)</td><td>só nos terminais de <b>FOLLOW(A)</b></td><td>o mesmo do LR(0)</td><td>médio</td><td>aula e parsers simples</td></tr>
+    <tr><td>LALR(1)</td><td>só nos <b>lookaheads exatos</b>, juntando estados LR(1) de mesmo núcleo</td><td>o mesmo do SLR</td><td>bom</td><td><b>Yacc, Bison</b></td></tr>
+    <tr><td>LR(1) canônico</td><td>só nos lookaheads exatos de cada item</td><td>muito maior</td><td>o maior</td><td>raro na prática</td></tr>
+  </table></div>
+  <p>Em termos de poder: LR(0) &lt; SLR(1) &lt; LALR(1) &lt; LR(1). O simulador abaixo monta a tabela <b>SLR(1)</b>.</p>
+  <h4>Conflitos: duas ações na mesma célula</h4>
+  <p>Se uma célula recebe <b>duas</b> ações, o parser determinístico não sabe qual escolher. Isso é um <b>conflito</b>, e significa que a gramática não é da classe usada (ou é ambígua).</p>
+  <div class="grid">
+    <div class="card"><h4>Shift/reduce</h4>
+      <pre style="margin:6px 0"><code>E → E + E | id</code></pre>
+      <p>Depois de <code>E + E</code> há dois itens: <code>E → E + E ·</code> (reduzir) e <code>E → E · + E</code> (empilhar). Vendo um <code>+</code>, ambos servem. Corrigir: dizer a <b>associatividade</b>. Esquerda (<code>1+2+3</code> = <code>(1+2)+3</code>) → <b>reduce</b>. Direita → <b>shift</b>. Entre operadores diferentes, vale a <b>precedência</b>: se o operador que chega tem precedência maior, shift. No Yacc: <code>%left '+'</code>.</p></div>
+    <div class="card"><h4>Reduce/reduce</h4>
+      <pre style="margin:6px 0"><code>S → A | B
+A → id
+B → id</code></pre>
+      <p>Depois de <code>id</code>, os itens <code>A → id ·</code> e <code>B → id ·</code> pedem reduce no mesmo <code>$</code>. Não dá para saber se foi A ou B. Corrigir: reescrever a gramática.</p></div>
+  </div>
+
+  <div class="tool" id="tool-lr">
+    <h4>Simulador 7: monte a tabela ação/desvio e analise uma entrada</h4>
+    <p style="font-size:14.5px;margin:0 0 6px">Escreva a gramática com <b>uma regra por linha</b>, no formato <code>A -&gt; X Y | Z</code>, com os símbolos <b>separados por espaços</b>. O símbolo inicial é o da primeira linha. Quem aparece à esquerda de <code>-&gt;</code> é não-terminal; o resto é terminal. Use <code>eps</code> para a produção vazia. O simulador mostra FIRST/FOLLOW, os estados, a tabela SLR(1) (conflitos em laranja) e a análise passo a passo.</p>
+    <div class="row">
+      <div><label for="lr-pre">Exemplo pronto</label>
+        <select id="lr-pre">
+          <option value="a">Pequena da aula: E → E + id | id</option>
+          <option value="b">Expressões: + * ( ) id</option>
+          <option value="e">Parênteses: S → ( S ) | x (Treine 6.A)</option>
+          <option value="c">Ambígua: E → E + E | id (conflito shift/reduce)</option>
+          <option value="d">S → A | B, A → id, B → id (conflito reduce/reduce)</option>
+        </select></div>
+      <div><label for="lr-in">Entrada (tokens separados por espaços)</label><input id="lr-in" value="id + id"></div>
+    </div>
+    <label for="lr-g">Gramática</label>
+    <textarea id="lr-g" spellcheck="false" style="min-height:110px">E -&gt; E + id | id</textarea>
+    <div class="bar" style="margin-top:8px"><button class="b" id="lr-go" type="button">Gerar tabela e analisar</button></div>
+    <div class="out" id="lr-out"></div>
+  </div>
+
+  <div class="try"><b class="t">Treine 6.A</b>
+    <p>Gramática: <code>(1) S → ( S )</code> e <code>(2) S → x</code>. Aumente com <code>S' → S</code>. (a) Monte os estados. (b) Preencha a tabela SLR. (c) Analise <code>( x )</code>. Confira depois no simulador (exemplo “Parênteses”).</p>
+    <details class="q"><summary>Ver resposta</summary><div>
+<pre><code>I0:  S' → · S      com S: I1,  com (: I2,  com x: I3
+     S  → · ( S )
+     S  → · x
+I1:  S' → S ·                          (aceitar)
+I2:  S  → ( · S )  com S: I4,  com (: I2,  com x: I3
+     S  → · ( S )
+     S  → · x
+I3:  S  → x ·                          (reduzir pela 2)
+I4:  S  → ( S · )  com ): I5
+I5:  S  → ( S ) ·                      (reduzir pela 1)</code></pre>
+      <p>FOLLOW(S) = { $, ) }, porque S fecha a entrada ou aparece antes de um <code>)</code>.</p>
+      <div class="tw"><table class="lrt">
+        <tr><th rowspan="2">Estado</th><th colspan="4">AÇÃO</th><th class="sep">DESVIO</th></tr>
+        <tr><th>(</th><th>)</th><th>x</th><th>$</th><th class="sep">S</th></tr>
+        <tr><td><b>0</b></td><td>s2</td><td></td><td>s3</td><td></td><td class="sep">1</td></tr>
+        <tr><td><b>1</b></td><td></td><td></td><td></td><td>acc</td><td class="sep"></td></tr>
+        <tr><td><b>2</b></td><td>s2</td><td></td><td>s3</td><td></td><td class="sep">4</td></tr>
+        <tr><td><b>3</b></td><td></td><td>r2</td><td></td><td>r2</td><td class="sep"></td></tr>
+        <tr><td><b>4</b></td><td></td><td>s5</td><td></td><td></td><td class="sep"></td></tr>
+        <tr><td><b>5</b></td><td></td><td>r1</td><td></td><td>r1</td><td class="sep"></td></tr>
+      </table></div>
+<pre><code>pilha              entrada     ação
+0                  ( x ) $     s2
+0 ( 2              x ) $       s3
+0 ( 2 x 3          ) $         r2  (S → x): desempilha 1; topo 2; DESVIO[2,S] = 4
+0 ( 2 S 4          ) $         s5
+0 ( 2 S 4 ) 5      $           r1  (S → ( S )): desempilha 3; topo 0; DESVIO[0,S] = 1
+0 S 1              $           acc</code></pre></div></details>
+  </div>
+
+  <div class="try"><b class="t">Treine 6.B</b>
+    <p>Com a tabela do Treine 6.A, analise a entrada <code>x )</code>. Em que passo o erro aparece, e por que só ali?</p>
+    <details class="q"><summary>Ver resposta</summary><div>
+<pre><code>pilha        entrada   ação
+0            x ) $     s3
+0 x 3        ) $       r2  (S → x): desempilha 1; topo 0; DESVIO[0,S] = 1
+0 S 1        ) $       AÇÃO[1, )] está vazia  →  ERRO</code></pre>
+      <p>O erro só aparece depois de reduzir, porque <code>)</code> pertence a FOLLOW(S) e o SLR escreve <code>r2</code> nessa coluna do estado 3. O LR(1) canônico, com lookahead exato, perceberia o erro um passo antes. Em ambos os casos <b>nenhum token inválido é empilhado</b>: o erro é detectado assim que a tabela não oferece ação.</p></div></details>
+  </div>
+
+  <h3>6.7 Autoteste</h3>
+  <div class="bar"><button class="b" data-toggle="s6">Abrir/fechar todas</button></div>
+  <div id="s6-cards">
+    <details class="q"><summary>O que significam as letras de “LR”?</summary><div><p>O primeiro L é de ler a entrada da esquerda para a direita; o R é de derivação mais à <b>direita</b>, construída ao contrário (bottom-up).</p></div></details>
+    <details class="q"><summary>Qual a diferença entre shift e reduce?</summary><div><p>Shift empilha o token atual e avança na entrada. Reduce troca, no topo da pilha, o lado direito de uma produção pelo seu lado esquerdo, sem consumir token.</p></div></details>
+    <details class="q"><summary>O que é o handle?</summary><div><p>O trecho do topo da pilha que deve ser reduzido agora para continuar refazendo a derivação mais à direita ao contrário. Nem todo trecho que casa com um lado direito é handle.</p></div></details>
+    <details class="q"><summary>Para que serve a parte AÇÃO e a parte DESVIO da tabela?</summary><div><p>AÇÃO[estado, terminal] diz shift (<code>sN</code>), reduce (<code>rK</code>), accept ou erro. DESVIO[estado, não-terminal] diz qual estado empilhar depois de uma redução.</p></div></details>
+    <details class="q"><summary>Numa redução por <code>A → β</code>, o que se faz com a pilha?</summary><div><p>Desempilham-se |β| pares; olha-se o estado t do topo; empilha-se A e o estado DESVIO[t, A]. A entrada não avança.</p></div></details>
+    <details class="q"><summary>O que é um item LR e para que serve closure?</summary><div><p>Item é uma produção com um ponto que marca o quanto já foi lido. Closure acrescenta ao estado os itens das produções do não-terminal que vem depois do ponto.</p></div></details>
+    <details class="q"><summary>Como se decide onde escrever <code>rK</code> no SLR?</summary><div><p>Para cada item completo <code>A → α ·</code> do estado, escreve-se <code>rK</code> em todas as colunas de terminais de FOLLOW(A).</p></div></details>
+    <details class="q"><summary>Qual a diferença entre SLR, LALR e LR(1)?</summary><div><p>Só onde os reduces são colocados. SLR usa FOLLOW(A). LR(1) usa o lookahead exato de cada item (muitos estados). LALR junta estados LR(1) de mesmo núcleo, ficando com o número de estados do SLR e quase o poder do LR(1). Yacc e Bison usam LALR(1).</p></div></details>
+    <details class="q"><summary>O que é um conflito shift/reduce e como se resolve?</summary><div><p>Uma célula com shift e reduce ao mesmo tempo. Resolve-se com associatividade (esquerda: reduce; direita: shift) e precedência dos operadores, ou reescrevendo a gramática.</p></div></details>
+    <details class="q"><summary>Por que o LR aceita mais gramáticas que o LL?</summary><div><p>O LR decide a redução depois de ter visto o lado direito inteiro da produção, e não precisa eliminar recursão à esquerda. Toda gramática LL(k) é LR(k), mas não o contrário.</p></div></details>
+    <details class="q"><summary>Onde entram as ações semânticas no parser LR?</summary><div><p>Na redução: quando <code>A → β</code> é reduzida, os atributos dos símbolos de β já estão calculados e o de A é computado. Por isso a SDT pós-fixada e a S-atribuída combinam com LR.</p></div></details>
+  </div>
+
+  <h3>Sei fazer (Aula 6)</h3>
+  <ul class="chk" data-group="s6">
+    <li><input type="checkbox" id="c-s6-1"><label for="c-s6-1">Explicar shift, reduce e handle com um exemplo</label></li>
+    <li><input type="checkbox" id="c-s6-2"><label for="c-s6-2">Construir os estados (closure e goto) de uma gramática pequena</label></li>
+    <li><input type="checkbox" id="c-s6-3"><label for="c-s6-3">Preencher a tabela ação/desvio (SLR) com FOLLOW</label></li>
+    <li><input type="checkbox" id="c-s6-4"><label for="c-s6-4">Analisar uma entrada mostrando a pilha de pares e cada ação</label></li>
+    <li><input type="checkbox" id="c-s6-5"><label for="c-s6-5">Reconhecer e resolver conflitos shift/reduce e reduce/reduce</label></li>
+  </ul>
+</section>
+
 <!-- ======================= GLOSSÁRIO ======================= -->
 <section class="blk" id="glos">
   <span class="tag">Consulta</span>
@@ -1564,6 +1834,15 @@ Por REFERÊNCIA:  formais são o próprio x e y.  Depois:       x = 2,  y = 1   
     <dt>Registro de ativação</dt><dd>Bloco da pilha criado em cada chamada.</dd>
     <dt>Árvore de ativação</dt><dd>Quem chamou quem durante a execução.</dd>
     <dt>Fragmentação</dt><dd>Memória livre dividida em pedaços pequenos demais para ser aproveitada.</dd>
+    <dt>Parser (analisador sintático)</dt><dd>Confere se os tokens seguem a gramática e monta a árvore de derivação.</dd>
+    <dt>Top-down (LL) / bottom-up (LR)</dt><dd>LL parte do símbolo inicial e expande até os tokens. LR parte dos tokens e reduz até o símbolo inicial.</dd>
+    <dt>Shift / reduce</dt><dd>Shift: empilha o token atual e avança. Reduce: troca o lado direito de uma produção, no topo da pilha, pelo lado esquerdo.</dd>
+    <dt>Handle (cabo)</dt><dd>O trecho do topo da pilha que pode ser reduzido agora, de modo a refazer a derivação mais à direita ao contrário.</dd>
+    <dt>Item LR</dt><dd>Produção com um ponto que marca até onde já foi lido: <code>E → E · + id</code>.</dd>
+    <dt>Closure / goto (de itens)</dt><dd>Closure: acrescenta os itens das produções do não-terminal que vem depois do ponto. Goto: avança o ponto sobre um símbolo e gera o estado seguinte.</dd>
+    <dt>Tabela ação/desvio</dt><dd>ACTION[estado, terminal] diz shift, reduce, accept ou erro. GOTO[estado, não-terminal] diz o estado a empilhar depois de uma redução.</dd>
+    <dt>Conflito shift/reduce, reduce/reduce</dt><dd>Duas ações possíveis na mesma célula: empilhar ou reduzir / reduzir por duas produções diferentes.</dd>
+    <dt>SLR, LALR, LR(1)</dt><dd>Variantes do parser LR que diferem em onde colocam os reduces (FOLLOW, ou lookahead exato). Yacc e Bison usam LALR(1).</dd>
   </dl>
 </section>
 
@@ -1590,6 +1869,9 @@ Por REFERÊNCIA:  formais são o próprio x e y.  Depois:       x = 2,  y = 1   
     <tr><td>Memória</td><td>Código | estática | pilha ↓ … ↑ heap. Um RA por chamada, empilhado e desempilhado.</td></tr>
     <tr><td>Árvore de ativação</td><td>Raiz main; chamadas em pré-ordem, retornos em pós-ordem; fib(n-2) vem antes de fib(n-1).</td></tr>
     <tr><td>First × best-fit</td><td>First: primeiro que cabe. Best: menor que cabe. Sobra menor que o mínimo → ocupa o chunk inteiro.</td></tr>
+    <tr><td>Parser LR</td><td>Pilha de pares (símbolo, estado). <code>sN</code>: empilha. <code>rK</code> (A → β): desempilha |β| pares, olha o topo t, empilha A e GOTO[t, A]. Célula vazia = erro.</td></tr>
+    <tr><td>Montar a tabela LR</td><td>Itens → closure → goto → estados. Terminal: <code>s</code>. Não-terminal: GOTO. Item completo: <code>r</code> em FOLLOW(A) (SLR). <code>S' → S·</code>: <code>acc</code> em <code>$</code>.</td></tr>
+    <tr><td>Conflitos LR</td><td>Shift/reduce: associatividade à esquerda → reduce; à direita → shift. Reduce/reduce: gramática ambígua ou fora da classe.</td></tr>
   </table></div>
 
   <h3>Itens que mais confundem</h3>
@@ -1599,6 +1881,7 @@ Por REFERÊNCIA:  formais são o próprio x e y.  Depois:       x = 2,  y = 1   
     <li>Item 78 dos novos exercícios (arestas pontilhadas × sólidas): os PDFs de exercício não mostram a figura; o padrão dos slides é pontilhada = árvore de derivação, sólida = dependência.</li>
     <li>A numeração dos nós do grafo de dependência de 3 * 5 varia entre fontes: neste guia usei a dos slides (1 e 2 são os <code>lexval</code>, 3 e 4 os <code>F.val</code>, 5 e 6 os <code>inh</code>, 7 e 8 os <code>syn</code>, 9 o <code>T.val</code>).</li>
     <li>O resultado da compilação não é o executável; quem o gera é o ligador.</li>
+    <li>A Aula 6 (parser LR) não vem do zip: foi acrescentada como complemento. Confira a notação da pilha e da tabela com o material do seu professor.</li>
   </ul>
 
   <footer>
@@ -1980,6 +2263,210 @@ Por REFERÊNCIA:  formais são o próprio x e y.  Depois:       x = 2,  y = 1   
   }
   document.getElementById("ft-go").addEventListener("click",runFit);
   runFit();
+
+  /* =====================================================
+     Simulador 7: parser LR (tabela SLR ação/desvio)
+     ===================================================== */
+  var LR_PRESETS={
+    a:{g:"E -> E + id | id",inp:"id + id"},
+    b:{g:"E -> E + T | T\nT -> T * F | F\nF -> ( E ) | id",inp:"id + id * id"},
+    e:{g:"S -> ( S ) | x",inp:"( ( x ) )"},
+    c:{g:"E -> E + E | id",inp:"id + id + id"},
+    d:{g:"S -> A | B\nA -> id\nB -> id",inp:"id"}
+  };
+  function mk(){return Object.create(null);}
+  function lrGrammar(text){
+    var lines=text.split(/\n/).map(function(s){return s.trim();}).filter(Boolean);
+    if(!lines.length) throw new Error("Digite a gramática.");
+    var nts=mk(), order=[], prods=[{l:"S'",r:[]}];
+    lines.forEach(function(ln,i){
+      var m=/^(\S+?)\s*(?:->|→)\s*(.*)$/.exec(ln);
+      if(!m) throw new Error("Linha "+(i+1)+": use o formato  A -> B c | d");
+      var A=m[1];
+      if(A==="S'") throw new Error("O nome S' é reservado para a produção aumentada.");
+      if(!nts[A]){nts[A]=true;order.push(A);}
+      m[2].split("|").forEach(function(alt){
+        var syms=alt.trim().split(/\s+/).filter(function(s){return s&&s!=="ε"&&s.toLowerCase()!=="eps";});
+        prods.push({l:A,r:syms});
+      });
+    });
+    prods[0]={l:"S'",r:[order[0]]};
+    var terms=[];
+    prods.forEach(function(p){p.r.forEach(function(s){if(!nts[s]&&terms.indexOf(s)<0) terms.push(s);});});
+    return {prods:prods,nts:nts,order:order,start:order[0],terms:terms,isNT:function(s){return nts[s]===true;}};
+  }
+  function lrSets(G){
+    var nullable=mk(), first=mk(), follow=mk();
+    G.order.forEach(function(A){nullable[A]=false;first[A]=[];follow[A]=[];});
+    function add(arr,x){if(arr.indexOf(x)<0){arr.push(x);return true;}return false;}
+    var ch=true;
+    while(ch){
+      ch=false;
+      G.prods.slice(1).forEach(function(p){
+        var allN=true;
+        for(var i=0;i<p.r.length;i++){
+          var s=p.r[i];
+          if(G.isNT(s)){
+            first[s].slice().forEach(function(t){if(add(first[p.l],t)) ch=true;});
+            if(!nullable[s]){allN=false;break;}
+          } else { if(add(first[p.l],s)) ch=true; allN=false; break; }
+        }
+        if(allN&&!nullable[p.l]){nullable[p.l]=true;ch=true;}
+      });
+    }
+    add(follow[G.start],"$");
+    ch=true;
+    while(ch){
+      ch=false;
+      G.prods.slice(1).forEach(function(p){
+        p.r.forEach(function(B,i){
+          if(!G.isNT(B)) return;
+          var allN=true;
+          for(var j=i+1;j<p.r.length;j++){
+            var s=p.r[j];
+            if(G.isNT(s)){
+              first[s].slice().forEach(function(t){if(add(follow[B],t)) ch=true;});
+              if(!nullable[s]){allN=false;break;}
+            } else { if(add(follow[B],s)) ch=true; allN=false; break; }
+          }
+          if(allN) follow[p.l].slice().forEach(function(t){if(add(follow[B],t)) ch=true;});
+        });
+      });
+    }
+    return {nullable:nullable,first:first,follow:follow};
+  }
+  function lrBuild(G,F){
+    var states=[], index=mk(), trans=[];
+    function closure(items){
+      var out=items.slice(), seen=mk();
+      out.forEach(function(it){seen[it[0]+"."+it[1]]=1;});
+      for(var k=0;k<out.length;k++){
+        var s=G.prods[out[k][0]].r[out[k][1]];
+        if(s!==undefined&&G.isNT(s)){
+          G.prods.forEach(function(q,qi){
+            if(qi>0&&q.l===s&&!seen[qi+".0"]){seen[qi+".0"]=1;out.push([qi,0]);}
+          });
+        }
+      }
+      return out;
+    }
+    function addState(items){
+      var key=items.slice().sort(function(a,b){return a[0]-b[0]||a[1]-b[1];}).map(function(it){return it[0]+"."+it[1];}).join(",");
+      if(index[key]===undefined){
+        if(states.length>=150) throw new Error("Autômato grande demais (mais de 150 estados).");
+        index[key]=states.length; states.push(items); trans.push(mk());
+      }
+      return index[key];
+    }
+    addState(closure([[0,0]]));
+    for(var i=0;i<states.length;i++){
+      var syms=[];
+      states[i].forEach(function(it){var s=G.prods[it[0]].r[it[1]]; if(s!==undefined&&syms.indexOf(s)<0) syms.push(s);});
+      for(var q=0;q<syms.length;q++){
+        var X=syms[q], mv=[];
+        states[i].forEach(function(it){if(G.prods[it[0]].r[it[1]]===X) mv.push([it[0],it[1]+1]);});
+        trans[i][X]=addState(closure(mv));
+      }
+    }
+    var act=[], gt=[];
+    states.forEach(function(items,i){
+      var a=mk(), g=mk();
+      function put(t,v){a[t]=a[t]||[]; if(a[t].indexOf(v)<0) a[t].push(v);}
+      Object.keys(trans[i]).forEach(function(X){
+        if(G.isNT(X)) g[X]=trans[i][X]; else put(X,"s"+trans[i][X]);
+      });
+      items.forEach(function(it){
+        var p=G.prods[it[0]];
+        if(it[1]===p.r.length){
+          if(it[0]===0) put("$","acc");
+          else F.follow[p.l].forEach(function(t){put(t,"r"+it[0]);});
+        }
+      });
+      act.push(a); gt.push(g);
+    });
+    return {states:states,trans:trans,act:act,gt:gt};
+  }
+  function lrRun(G,B,toks){
+    var st=[0], sy=[], rows=[], pos=0, inp=toks.concat(["$"]);
+    function show(){var s=""+st[0]; for(var k=0;k<sy.length;k++) s+=" "+sy[k]+" "+st[k+1]; return s;}
+    for(var n=1;n<=300;n++){
+      var s=st[st.length-1], a=inp[pos], cell=B.act[s][a];
+      var row={n:n,stack:show(),input:inp.slice(pos).join(" ")};
+      rows.push(row);
+      if(!cell){row.act="AÇÃO["+s+", "+esc(a)+"] está vazia: <b>erro de sintaxe</b>"; return {rows:rows,ok:false,msg:"erro de sintaxe no token “"+a+"”"};}
+      if(cell.length>1){row.act="AÇÃO["+s+", "+esc(a)+"] = "+esc(cell.join(" / "))+": <b>conflito</b>, o parser não consegue decidir"; return {rows:rows,ok:false,msg:"conflito na célula ["+s+", "+a+"]"};}
+      var v=cell[0];
+      if(v==="acc"){row.act="<b>acc</b>: entrada aceita"; return {rows:rows,ok:true};}
+      if(v[0]==="s"){
+        var t=+v.slice(1); row.act="<b>"+v+"</b>: empilha "+esc(a)+" e o estado "+t+"; lê o próximo token";
+        sy.push(a); st.push(t); pos++;
+      } else {
+        var k=+v.slice(1), p=G.prods[k], m=p.r.length;
+        sy.length-=m; st.length-=m;
+        var top=st[st.length-1], g=B.gt[top][p.l];
+        row.act="<b>"+v+"</b> ("+esc(p.l+" → "+(m?p.r.join(" "):"ε"))+"): desempilha "+m+" par(es); topo = "+top+"; DESVIO["+top+", "+esc(p.l)+"] = "+g+"; empilha "+esc(p.l)+" "+g;
+        sy.push(p.l); st.push(g);
+      }
+    }
+    return {rows:rows,ok:false,msg:"mais de 300 passos (possível laço de reduções vazias)"};
+  }
+  function itemTxt(G,it){
+    var p=G.prods[it[0]];
+    return esc(p.l+" → "+p.r.slice(0,it[1]).concat(["·"],p.r.slice(it[1])).join(" "));
+  }
+  function runLR(){
+    var out=document.getElementById("lr-out");
+    try{
+      var G=lrGrammar(document.getElementById("lr-g").value), F=lrSets(G), B=lrBuild(G,F);
+      var cols=G.terms.concat(["$"]), ncols=G.order, h="", conflicts=0;
+      h+='<h4>1. Produções</h4><pre>'+G.prods.map(function(p,i){
+        return "("+i+") "+esc(p.l)+" → "+(p.r.length?esc(p.r.join(" ")):"ε")+(i===0?"        ← produção aumentada":"");
+      }).join("\n")+'</pre>';
+      h+='<h4>2. FIRST e FOLLOW</h4><div class="tw"><table><tr><th>Não-terminal</th><th>FIRST</th><th>FOLLOW</th></tr>'+G.order.map(function(A){
+        return '<tr><td>'+esc(A)+'</td><td>{ '+esc(F.first[A].concat(F.nullable[A]?["ε"]:[]).join(", "))+' }</td><td>{ '+esc(F.follow[A].join(", "))+' }</td></tr>';
+      }).join("")+'</table></div>';
+      h+='<h4>3. Estados (conjuntos de itens)</h4><div class="grid">'+B.states.map(function(items,i){
+        var tr=Object.keys(B.trans[i]).map(function(X){return "com "+esc(X)+" → I"+B.trans[i][X];}).join("  ·  ");
+        return '<div class="card"><b>I'+i+'</b><pre style="margin:6px 0">'+items.map(function(it){return itemTxt(G,it);}).join("\n")+'</pre><div style="font-size:13.5px;color:var(--muted)">'+(tr||"sem transições")+'</div></div>';
+      }).join("")+'</div>';
+      h+='<h4>4. Tabela AÇÃO / DESVIO (SLR)</h4><div class="tw"><table class="lrt"><tr><th rowspan="2">Estado</th><th colspan="'+cols.length+'">AÇÃO</th><th colspan="'+ncols.length+'" class="sep">DESVIO</th></tr><tr>'
+        +cols.map(function(t){return "<th>"+esc(t)+"</th>";}).join("")
+        +ncols.map(function(A,k){return '<th'+(k===0?' class="sep"':'')+'>'+esc(A)+"</th>";}).join("")+"</tr>";
+      B.act.forEach(function(a,i){
+        h+="<tr><td><b>"+i+"</b></td>";
+        cols.forEach(function(t){
+          var c=a[t];
+          if(!c) h+="<td></td>";
+          else if(c.length>1){conflicts++; h+='<td class="cf">'+esc(c.join(" / "))+"</td>";}
+          else h+="<td>"+esc(c[0])+"</td>";
+        });
+        ncols.forEach(function(A,k){var g=B.gt[i][A]; h+="<td"+(k===0?' class="sep"':'')+">"+(g===undefined?"":g)+"</td>";});
+        h+="</tr>";
+      });
+      h+="</table></div>";
+      h+=conflicts?'<div class="warn"><b>'+conflicts+' célula(s) com conflito</b><p>A gramática <b>não é SLR(1)</b>: o parser determinístico não consegue decidir nessas células (laranja). Pode ser ambiguidade ou só limitação do SLR.</p></div>'
+                  :'<div class="ok"><b>Sem conflitos</b><p>A gramática é <b>SLR(1)</b>: cada célula tem no máximo uma ação.</p></div>';
+      var toks=document.getElementById("lr-in").value.trim().split(/\s+/).filter(Boolean);
+      var bad=toks.filter(function(t){return G.terms.indexOf(t)<0;});
+      if(bad.length){
+        h+='<div class="warn"><b>Entrada inválida</b><p>“'+esc(bad[0])+'” não é terminal desta gramática. Terminais: <code>'+esc(G.terms.join(" "))+'</code>. Separe os tokens por espaços.</p></div>';
+      } else {
+        var R=lrRun(G,B,toks);
+        h+='<h4>5. Análise de <code>'+esc(toks.join(" ")||"(entrada vazia)")+'</code></h4><div class="tw"><table><tr><th>Passo</th><th>Pilha</th><th>Entrada</th><th>Ação</th></tr>'
+          +R.rows.map(function(r){return "<tr><td>"+r.n+"</td><td><code>"+esc(r.stack)+"</code></td><td><code>"+esc(r.input)+"</code></td><td>"+r.act+"</td></tr>";}).join("")+"</table></div>";
+        h+=R.ok?'<span class="pill y">Entrada aceita</span>':'<span class="pill n">Rejeitada: '+esc(R.msg)+"</span>";
+      }
+      out.innerHTML=h;
+    }catch(err){
+      out.innerHTML='<div class="warn"><b>Não foi possível montar a tabela</b><p>'+esc(err.message)+"</p></div>";
+    }
+  }
+  document.getElementById("lr-go").addEventListener("click",runLR);
+  document.getElementById("lr-pre").addEventListener("change",function(){
+    var p=LR_PRESETS[this.value];
+    document.getElementById("lr-g").value=p.g; document.getElementById("lr-in").value=p.inp; runLR();
+  });
+  runLR();
 })();
 </script>
 </body>
