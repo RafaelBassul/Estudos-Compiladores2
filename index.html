@@ -10,20 +10,21 @@
   --accent:#1f5f8b; --accent-soft:#e6f0f7; --warn:#a8470f; --warn-soft:#fbeee4;
   --ok:#2c6e49; --ok-soft:#e5f2ea; --idea:#6b4e9b; --idea-soft:#efeaf7;
   --code-bg:#f2f0ea; --shadow:0 1px 2px rgba(20,30,40,.06);
+  --gold:#7a5c00; --gold-soft:#fff1b8; --red:#b3261e; --red-soft:#fdeaea;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --bg:#14181d; --surface:#1b2128; --ink:#e7eaee; --muted:#9aa5b3; --line:#2c343e;
     --accent:#7db6e0; --accent-soft:#1d2e3b; --warn:#f0a76f; --warn-soft:#33261c;
     --ok:#7ccf9d; --ok-soft:#1b2e24; --idea:#c0a6ef; --idea-soft:#2a2238;
-    --code-bg:#222a33; --shadow:none;
+    --code-bg:#222a33; --shadow:none; --gold:#f0cf6a; --gold-soft:#3a3214; --red:#f28b82; --red-soft:#3a1f1f;
   }
 }
 :root[data-theme="dark"]{
   --bg:#14181d; --surface:#1b2128; --ink:#e7eaee; --muted:#9aa5b3; --line:#2c343e;
   --accent:#7db6e0; --accent-soft:#1d2e3b; --warn:#f0a76f; --warn-soft:#33261c;
   --ok:#7ccf9d; --ok-soft:#1b2e24; --idea:#c0a6ef; --idea-soft:#2a2238;
-  --code-bg:#222a33; --shadow:none;
+  --code-bg:#222a33; --shadow:none; --gold:#f0cf6a; --gold-soft:#3a3214; --red:#f28b82; --red-soft:#3a1f1f;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:84px}
@@ -113,16 +114,41 @@ button.b:disabled{opacity:.45;cursor:default}
 table.lrt th,table.lrt td{text-align:center;font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:14px;padding:5px 9px}
 table.lrt .sep{border-left:3px solid var(--accent)}
 table.lrt td.cf{background:var(--warn-soft);color:var(--warn);font-weight:700}
-table.lrt td.hl-a{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent);color:var(--accent);font-weight:700}
-table.lrt td.hl-g{background:var(--warn-soft);box-shadow:inset 0 0 0 2px var(--warn);color:var(--warn);font-weight:700}
+#lrw-table td,#lrw-table th{padding:3px 8px;font-size:13px}
+table.lrt td.rs{background:var(--accent-soft)}
+table.lrt td.ct{background:var(--idea-soft)}
+table.lrt td.cgt{background:var(--warn-soft)}
+table.lrt td.ca{background:var(--gold-soft);box-shadow:inset 0 0 0 3px var(--gold);color:var(--gold);font-weight:700}
+table.lrt td.cg{background:var(--warn-soft);box-shadow:inset 0 0 0 3px var(--warn);color:var(--warn);font-weight:700}
+table.lrt td.rsh{background:var(--accent);color:var(--bg);font-weight:700}
+table.lrt th.cth{background:var(--idea);color:var(--bg)}
+table.lrt th.cgh{background:var(--warn);color:var(--bg)}
 .stk{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:6px 0 10px}
-.sb{display:inline-block;min-width:32px;text-align:center;padding:3px 9px;border-radius:7px;font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
-.sb.st{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700;border-radius:4px}
-.sb.cur{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
-.sb.top{box-shadow:0 0 0 2px var(--accent)}
-.sb.pop{text-decoration:line-through;border-color:var(--warn);background:var(--warn-soft);color:var(--warn)}
+.sb{display:inline-block;min-width:32px;text-align:center;padding:3px 9px;border-radius:7px;font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.sb.st{border-color:var(--accent);color:var(--accent);font-weight:700;border-radius:4px}
+.sb.top{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.sb.tok{background:var(--idea);color:var(--bg);border-color:var(--idea);font-weight:700}
+.sb.pop{text-decoration:line-through;border-color:var(--red);background:var(--red-soft);color:var(--red)}
 .sb.new{border-color:var(--ok);background:var(--ok-soft);color:var(--ok);font-weight:700}
 .mut{font-size:12.5px;color:var(--muted);margin-left:6px}
+.k{display:inline-block;padding:0 7px;border-radius:6px;font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:.92em;font-weight:700;border:1px solid transparent;line-height:1.55}
+.k-st{background:var(--accent);color:var(--bg)}
+.k-tok{background:var(--idea);color:var(--bg)}
+.k-act{background:var(--gold-soft);color:var(--gold);border-color:var(--gold)}
+.k-go{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}
+.k-out{background:var(--red-soft);color:var(--red);border-color:var(--red);text-decoration:line-through}
+.k-in{background:var(--ok-soft);color:var(--ok);border-color:var(--ok)}
+button.b.big{font-size:17px;padding:11px 26px;background:var(--accent);color:var(--bg);font-weight:700}
+button.b.big:hover{filter:brightness(1.1);background:var(--accent);color:var(--bg)}
+.lgbox{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:0 0 12px;background:var(--bg)}
+.lgrid{display:grid;gap:6px 18px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));margin-top:6px;font-size:14.5px}
+.wh{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0 8px;font-weight:700;font-size:16px}
+.wb{display:inline-block;padding:3px 13px;border-radius:99px;font-size:14px;font-weight:700}
+.wb-s{background:var(--accent-soft);color:var(--accent)}
+.wb-r{background:var(--gold-soft);color:var(--gold)}
+.wb-a{background:var(--ok-soft);color:var(--ok)}
+.wb-e{background:var(--red-soft);color:var(--red)}
+.wsum{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--gold);border-radius:10px;padding:10px 14px;margin:6px 0 12px;font-size:16px;line-height:1.9}
 dl.gl dt{font-weight:700;margin-top:10px}
 dl.gl dd{margin:0 0 0 0;color:var(--ink)}
 footer{margin-top:60px;color:var(--muted);font-size:13.5px;border-top:1px solid var(--line);padding-top:14px}
@@ -1719,28 +1745,53 @@ I4:  E → E + id ·      (item completo: reduzir pela produção 1)</code></pre
   <p><b>Como ler a pilha:</b> da esquerda (fundo) para a direita (topo). Os <b>números</b> são estados, e os <b>símbolos</b> (<code>(</code>, <code>E</code>, <code>id</code>…) são o que já foi lido. Ela sempre alterna: estado, símbolo, estado, símbolo… e <b>termina em estado</b>.</p>
 
   <div class="tool" id="tool-lrw">
-    <h4>Simulador 8: passo a passo guiado com a tabela de 12 estados</h4>
-    <p style="font-size:14.5px;margin:0 0 6px">Aperte <b>Próximo</b> e acompanhe. Em cada passo o simulador explica <b>o que olhou, o que a célula manda e o que muda na pilha</b>. Na tabela, a célula de <b style="color:var(--accent)">AÇÃO</b> consultada fica em azul e a de <b style="color:var(--warn)">DESVIO</b> em laranja. Na pilha, o que vai <b style="color:var(--warn)">sair</b> aparece riscado e o que <b style="color:var(--ok)">entra</b> em verde.</p>
-    <label for="lrw-in">Palavra (tokens separados por espaços; use <code>id + * ( )</code>)</label>
-    <input id="lrw-in" value="( ( id ) )">
-    <div class="bar" style="margin-top:8px">
-      <button class="b" id="lrw-load" type="button">Carregar</button>
-      <button class="b" type="button" data-w="( ( id ) )">( ( id ) )</button>
-      <button class="b" type="button" data-w="id * id">id * id</button>
-      <button class="b" type="button" data-w="id * id + id">id * id + id</button>
-      <button class="b" type="button" data-w="( id ) * id">( id ) * id</button>
-      <button class="b" type="button" data-w="id + * id">id + * id (erro)</button>
+    <h4>Simulador 8: passo a passo guiado, com cores</h4>
+    <div id="lrw-start">
+      <p style="margin:0 0 12px">Clique no botão para ver o exemplo <code>( ( id ) )</code> <b>um passo de cada vez</b>. Em cada passo você vê <b>o que o parser olhou, onde isso está na tabela (com cores), o que a tabela mandou fazer e como a pilha ficou</b>, tudo explicado em uma frase.</p>
+      <button class="b big" id="lrw-show" type="button">▶ Mostrar o passo a passo</button>
     </div>
-    <div class="bar">
-      <button class="b" id="lrw-first" type="button">⏮ Início</button>
-      <button class="b" id="lrw-prev" type="button">◀ Voltar</button>
-      <button class="b" id="lrw-next" type="button">Próximo ▶</button>
-      <button class="b" id="lrw-last" type="button">Fim ⏭</button>
+
+    <div id="lrw-player" hidden>
+      <div class="lgbox">
+        <b>Legenda das cores</b> <span class="mut">(vale para a pilha, a entrada, a tabela e as frases)</span>
+        <div class="lgrid">
+          <div><span class="k k-st">4</span> <b>estado do topo</b> da pilha. É a <b>linha</b> que se procura na tabela.</div>
+          <div><span class="k k-tok">(</span> <b>token atual</b> (o primeiro da entrada). É a <b>coluna</b> que se procura.</div>
+          <div><span class="k k-act">s4</span> <b>célula de AÇÃO</b>: o cruzamento da linha com a coluna. Diz o que fazer.</div>
+          <div><span class="k k-go">3</span> <b>célula de DESVIO</b>: só depois de reduzir. Diz o novo estado.</div>
+          <div><span class="k k-out">( 4</span> o que <b>sai</b> da pilha (riscado), numa redução.</div>
+          <div><span class="k k-in">F 3</span> o que <b>entra</b> na pilha.</div>
+        </div>
+      </div>
+
+      <label for="lrw-in">Palavra (tokens separados por espaços; use <code>id + * ( )</code>)</label>
+      <input id="lrw-in" value="( ( id ) )">
+      <div class="bar" style="margin-top:8px">
+        <button class="b" id="lrw-load" type="button">Carregar</button>
+        <button class="b" type="button" data-w="( ( id ) )">( ( id ) )</button>
+        <button class="b" type="button" data-w="id * id">id * id</button>
+        <button class="b" type="button" data-w="id * id + id">id * id + id</button>
+        <button class="b" type="button" data-w="( id ) * id">( id ) * id</button>
+        <button class="b" type="button" data-w="id + * id">id + * id (erro)</button>
+      </div>
+      <div class="bar" style="margin-top:12px">
+        <button class="b" id="lrw-first" type="button">⏮ Início</button>
+        <button class="b" id="lrw-prev" type="button">◀ Voltar</button>
+        <button class="b" id="lrw-next" type="button">Próximo ▶</button>
+        <button class="b" id="lrw-last" type="button">Fim ⏭</button>
+        <button class="b" id="lrw-play" type="button">▶ Reproduzir sozinho</button>
+        <button class="b" id="lrw-hide" type="button">✕ Fechar</button>
+      </div>
+      <div class="progress" style="max-width:none;margin:2px 0 10px"><i id="lrw-pb"></i></div>
+
+      <div id="lrw-top"></div>
+      <div id="lrw-tablewrap">
+        <h4 style="margin:14px 0 4px">A tabela, com o que o parser consultou neste passo</h4>
+        <div class="tw"><table class="lrt" id="lrw-table"></table></div>
+      </div>
+      <div id="lrw-bottom"></div>
+      <details class="q"><summary>Ver o histórico completo numa tabela só</summary><div id="lrw-hist"></div></details>
     </div>
-    <div class="out" id="lrw-panel"></div>
-    <h4 style="margin-top:16px">A tabela (de onde saem as respostas)</h4>
-    <div class="tw"><table class="lrt" id="lrw-table"></table></div>
-    <details class="q"><summary>Ver o histórico completo numa tabela só</summary><div id="lrw-hist"></div></details>
   </div>
 
   <div class="idea"><b>O que repete em <code>( ( id ) )</code> (e vale para qualquer entrada)</b>
@@ -2574,8 +2625,9 @@ I5:  S  → ( S ) ·                      (reduzir pela 1)</code></pre>
     {"+":"r3","*":"r3",")":"r3",$:"r3"},
     {"+":"r5","*":"r5",")":"r5",$:"r5"}
   ];
-  var wRes=null, wIdx=0;
+  var wRes=null, wIdx=0, wTimer=null;
 
+  function chip(c,t){return '<span class="k k-'+c+'">'+esc(t)+"</span>";}
   function wRun(toks){
     var st=[0], sy=[], inp=toks.concat(["$"]), pos=0, steps=[];
     for(var n=1;n<=200;n++){
@@ -2598,6 +2650,7 @@ I5:  S  → ( S ) ·                      (reduzir pela 1)</code></pre>
     return {steps:steps,ok:false};
   }
   function wStackStr(st,sy){var s=""+st[0]; for(var k=0;k<sy.length;k++) s+=" "+sy[k]+" "+st[k+1]; return s;}
+  function wPopped(sp,m){var o=[]; for(var i=sp.sy.length-m;i<sp.sy.length;i++) o.push(sp.sy[i]+" "+sp.st[i+1]); return o.join("  ");}
   function wStackHtml(st,sy,o){
     o=o||{};
     var items=[{t:st[0],c:"st"}];
@@ -2609,29 +2662,43 @@ I5:  S  → ( S ) ·                      (reduzir pela 1)</code></pre>
       if(o.nw&&i>=n-o.nw) c+=" new";
       if(i===topAt) c+=" top";
       return '<span class="'+c+'">'+esc(it.t)+"</span>";
-    }).join("")+(o.pop?"":'<span class="mut">← topo</span>')+"</div>";
+    }).join("")+(o.label?'<span class="mut">'+o.label+"</span>":"")+"</div>";
   }
   function wInput(rest){
-    return '<div class="stk">'+rest.map(function(t,i){return '<span class="sb'+(i===0?" cur":"")+'">'+esc(t)+"</span>";}).join("")+'<span class="mut">← o próximo token está em azul</span></div>';
+    return '<div class="stk">'+rest.map(function(t,i){return '<span class="sb'+(i===0?" tok":"")+'">'+esc(t)+"</span>";}).join("")+'<span class="mut">← o próximo token (roxo) é a coluna</span></div>';
+  }
+  function wSummary(sp){
+    var h="Olhei o topo da pilha ("+chip("st",sp.s)+") e o próximo token ("+chip("tok",sp.a)+"). Na tabela, <b>linha</b> "+chip("st",sp.s)+" × <b>coluna</b> "+chip("tok",sp.a)+(sp.cell===undefined?" está <b>vazia</b>":" tem "+chip("act",sp.cell))+". ";
+    if(sp.kind==="s"){
+      h+="Isso é um <b>shift</b>: guardei o token "+chip("in",sp.a)+" na pilha e, logo depois, o número "+chip("in",sp.to)+". Passei para o próximo token. <b>Ainda não reduzi nada</b>: só estou juntando peças.";
+    } else if(sp.kind==="r"){
+      var p=W_PROD[sp.k], m=p.r.length;
+      h+="Isso é um <b>reduce</b> pela regra "+sp.k+" (<b>"+esc(p.l+" → "+p.r.join(" "))+"</b>): "+esc(p.m)+". Tirei da pilha "+chip("out",wPopped(sp,m))+" ("+m+" par"+(m===1?"":"es")+"). O topo ficou "+chip("st",sp.top)+"; no <b>DESVIO</b>, linha "+chip("st",sp.top)+" × coluna "+chip("go",p.l)+" tem "+chip("go",sp.g)+". Coloquei "+chip("in",p.l)+" e "+chip("in",sp.g)+" na pilha. <b>A entrada não andou.</b>";
+    } else if(sp.kind==="acc"){
+      h+="Isso é <b>acc</b> (aceitar): a entrada acabou ("+chip("tok","$")+") e a pilha só tem o símbolo inicial <b>E</b>. A palavra é válida!";
+    } else {
+      h+="Célula vazia significa <b>erro de sintaxe</b>: o token "+chip("tok",sp.a)+" não pode aparecer nesse estado. A análise para aqui.";
+    }
+    return h;
   }
   function wExplain(sp){
     var h='<ol class="steps">';
-    h+='<li><b>Estado no topo da pilha:</b> <code>'+sp.s+'</code> (o último número da pilha).</li>';
-    h+='<li><b>Token atual:</b> <code>'+esc(sp.a)+'</code> (o primeiro da entrada'+(sp.a==="$"?", o marcador de fim":"")+').</li>';
-    h+='<li><b>Consulto a tabela:</b> linha <code>'+sp.s+'</code>, coluna <code>'+esc(sp.a)+'</code>, parte AÇÃO (azul) → '+(sp.cell===undefined?"<b>célula vazia</b>":"<b><code>"+sp.cell+"</code></b>")+".</li>";
+    h+='<li><b>Estado no topo da pilha:</b> '+chip("st",sp.s)+' (o último número da pilha). Ele diz <b>qual linha</b> da tabela olhar.</li>';
+    h+='<li><b>Token atual:</b> '+chip("tok",sp.a)+(sp.a==="$"?" (o marcador de fim da entrada)":" (o primeiro da entrada)")+'. Ele diz <b>qual coluna</b> olhar.</li>';
+    h+='<li><b>Cruzo linha e coluna (parte AÇÃO):</b> '+chip("st",sp.s)+" × "+chip("tok",sp.a)+" = "+(sp.cell===undefined?"<b>célula vazia</b>":chip("act",sp.cell))+".</li>";
     if(sp.kind==="s"){
-      h+='<li><b><code>'+sp.cell+'</code> = shift (empilhar):</b> pego o token <code>'+esc(sp.a)+'</code> da entrada e coloco na pilha; logo depois coloco o número <code>'+sp.to+'</code> (o novo estado). A entrada anda um token. <i>Por quê?</i> Ainda não dá para juntar nada, então só guardo o token e continuo lendo.'+wStackHtml(sp.st2,sp.sy2,{nw:2})+"</li>";
+      h+='<li><b>'+chip("act",sp.cell)+' = shift (empilhar):</b> pego o token '+chip("in",sp.a)+' da entrada e coloco na pilha; logo depois coloco o número '+chip("in",sp.to)+' (o novo estado). A entrada anda um token. <i>Por quê?</i> Ainda não dá para juntar nada, então só guardo o token e continuo lendo.</li>';
     } else if(sp.kind==="r"){
-      var p=W_PROD[sp.k], m=p.r.length, rhs=m?p.r.join(" "):"ε", plural=m===1?"":"s";
-      h+='<li><b><code>'+sp.cell+'</code> = reduce (reduzir) pela regra '+sp.k+', <code>'+esc(p.l+" → "+rhs)+'</code>:</b> o lado direito (<code>'+esc(rhs)+'</code>) está no topo da pilha e vou trocá-lo pelo lado esquerdo (<code>'+esc(p.l)+'</code>). <i>Significado:</i> '+esc(p.m)+".</li>";
-      h+='<li><b>Desempilho:</b> o lado direito tem <b>'+m+'</b> símbolo'+plural+', então saem <b>'+m+' par'+(m===1?"":"es")+'</b> (símbolo + estado) do topo. Os que saem aparecem riscados, e o novo topo fica destacado:'+wStackHtml(sp.st,sp.sy,{pop:m,topAt:(1+2*sp.sy.length)-2*m-1})+"</li>";
-      h+='<li><b>Novo topo:</b> o estado que sobrou é <code>'+sp.top+'</code>. Consulto a tabela na linha <code>'+sp.top+'</code>, coluna <code>'+esc(p.l)+'</code>, mas agora na parte <b>DESVIO</b> (laranja) → <code>'+sp.g+'</code>.</li>';
-      h+='<li><b>Empilho</b> <code>'+esc(p.l)+'</code> e depois <code>'+sp.g+'</code> (em verde). A entrada <b>não anda</b>: reduzir não consome token.'+wStackHtml(sp.st2,sp.sy2,{nw:2})+"</li>";
+      var p=W_PROD[sp.k], m=p.r.length, rhs=m?p.r.join(" "):"ε";
+      h+='<li><b>'+chip("act",sp.cell)+' = reduce (reduzir) pela regra '+sp.k+', <code>'+esc(p.l+" → "+rhs)+'</code>:</b> o lado direito (<code>'+esc(rhs)+'</code>) está no topo da pilha e vou trocá-lo pelo lado esquerdo (<code>'+esc(p.l)+'</code>). <i>Significado:</i> '+esc(p.m)+".</li>";
+      h+='<li><b>Desempilho:</b> o lado direito tem <b>'+m+'</b> símbolo'+(m===1?"":"s")+', então saem <b>'+m+' par'+(m===1?"":"es")+'</b> (símbolo + estado) do topo. Os que saem aparecem riscados em vermelho, e o novo topo fica em azul forte:'+wStackHtml(sp.st,sp.sy,{pop:m,topAt:(1+2*sp.sy.length)-2*m-1})+"</li>";
+      h+='<li><b>Novo topo:</b> o estado que sobrou é '+chip("st",sp.top)+'. Agora consulto a tabela na linha '+chip("st",sp.top)+', coluna '+chip("go",p.l)+', mas na parte <b>DESVIO</b> (laranja) → '+chip("go",sp.g)+'.</li>';
+      h+='<li><b>Empilho</b> '+chip("in",p.l)+' e depois '+chip("in",sp.g)+' (em verde, na pilha de baixo). A entrada <b>não anda</b>: reduzir não consome token.</li>';
     } else if(sp.kind==="acc"){
-      h+='<li><b><code>acc</code> = aceitar:</b> o token atual é <code>$</code> (fim da entrada) e a pilha tem só o símbolo inicial <code>E</code> com o estado <code>1</code>. Tudo foi reduzido até o começo, então a palavra <b>pertence à linguagem</b>.</li>';
+      h+='<li><b>'+chip("act","acc")+' = aceitar:</b> o token atual é <code>$</code> (fim da entrada) e a pilha tem só o símbolo inicial <code>E</code> com o estado <code>1</code>. Tudo foi reduzido até o começo, então a palavra <b>pertence à linguagem</b>.</li>';
     } else {
       var ok=Object.keys(W_TAB[sp.s]).filter(function(k){return W_COLS.indexOf(k)>=0;}).map(function(k){return k==="$"?"$ (fim)":k;});
-      h+='<li><b>Célula vazia = erro de sintaxe.</b> A tabela não prevê o token <code>'+esc(sp.a)+'</code> no estado <code>'+sp.s+'</code>. Aqui o parser só aceitaria: <code>'+esc(ok.join("  "))+'</code>. A análise para.</li>';
+      h+='<li><b>Célula vazia = erro de sintaxe.</b> A tabela não prevê o token '+chip("tok",sp.a)+' no estado '+chip("st",sp.s)+'. Aqui o parser só aceitaria: <code>'+esc(ok.join("  "))+'</code>. A análise para.</li>';
     }
     return h+"</ol>";
   }
@@ -2649,8 +2716,8 @@ I5:  S  → ( S ) ·                      (reduzir pela 1)</code></pre>
   }
   function wBuildTable(){
     var h='<tr><th rowspan="2">Estado</th><th colspan="6">AÇÃO</th><th colspan="3" class="sep">DESVIO</th></tr><tr>'
-      +W_COLS.map(function(c){return "<th>"+esc(c)+"</th>";}).join("")
-      +W_NT.map(function(c,i){return "<th"+(i===0?' class="sep"':"")+">"+c+"</th>";}).join("")+"</tr>";
+      +W_COLS.map(function(c,j){return '<th id="lrw-h-'+j+'">'+esc(c)+"</th>";}).join("")
+      +W_NT.map(function(c,i){return '<th id="lrw-h-'+(6+i)+'"'+(i===0?' class="sep"':"")+">"+c+"</th>";}).join("")+"</tr>";
     W_TAB.forEach(function(row,s){
       h+='<tr><td id="lrw-s'+s+'"><b>'+s+"</b></td>";
       W_COLS.forEach(function(c,j){h+='<td id="lrw-'+s+"-"+j+'">'+esc(row[c]===undefined?"":row[c])+"</td>";});
@@ -2660,10 +2727,23 @@ I5:  S  → ( S ) ·                      (reduzir pela 1)</code></pre>
     document.getElementById("lrw-table").innerHTML=h;
   }
   function wHl(sp){
-    [].forEach.call(document.querySelectorAll("#lrw-table .hl-a,#lrw-table .hl-g"),function(e){e.classList.remove("hl-a","hl-g");});
-    function mark(id,c){var e=document.getElementById(id); if(e) e.classList.add(c);}
-    mark("lrw-"+sp.s+"-"+W_COLS.indexOf(sp.a),"hl-a"); mark("lrw-s"+sp.s,"hl-a");
-    if(sp.kind==="r"){mark("lrw-"+sp.top+"-"+(6+W_NT.indexOf(W_PROD[sp.k].l)),"hl-g"); mark("lrw-s"+sp.top,"hl-g");}
+    var all=["rs","ct","cgt","ca","cg","rsh","cth","cgh"];
+    [].forEach.call(document.querySelectorAll("#lrw-table td,#lrw-table th"),function(e){e.classList.remove.apply(e.classList,all);});
+    function add(id,c){var e=document.getElementById(id); if(e) e.classList.add(c);}
+    var a=W_COLS.indexOf(sp.a), rows=[sp.s], gcol=-1, s2, j;
+    if(sp.kind==="r"){rows.push(sp.top); gcol=6+W_NT.indexOf(W_PROD[sp.k].l);}
+    for(s2=0;s2<W_TAB.length;s2++){
+      add("lrw-"+s2+"-"+a,"ct");
+      if(gcol>=0) add("lrw-"+s2+"-"+gcol,"cgt");
+    }
+    rows.forEach(function(r){
+      for(j=0;j<9;j++) add("lrw-"+r+"-"+j,"rs");
+      add("lrw-s"+r,"rsh");
+    });
+    add("lrw-h-"+a,"cth");
+    if(gcol>=0) add("lrw-h-"+gcol,"cgh");
+    add("lrw-"+sp.s+"-"+a,"ca");
+    if(sp.kind==="r") add("lrw-"+sp.top+"-"+gcol,"cg");
   }
   function wHist(){
     var h='<div class="tw"><table><tr><th>#</th><th>Pilha</th><th>Entrada</th><th>Consulta</th><th>O que fez</th></tr>';
@@ -2680,30 +2760,56 @@ I5:  S  → ( S ) ·                      (reduzir pela 1)</code></pre>
     var N=wRes?wRes.steps.length:0;
     document.getElementById("lrw-first").disabled=document.getElementById("lrw-prev").disabled=!wRes||wIdx===0;
     document.getElementById("lrw-next").disabled=document.getElementById("lrw-last").disabled=!wRes||wIdx>=N-1;
+    document.getElementById("lrw-play").disabled=!wRes;
+    document.getElementById("lrw-pb").style.width=wRes?Math.round(100*(wIdx+1)/N)+"%":"0";
   }
   function wRender(){
-    var sp=wRes.steps[wIdx], N=wRes.steps.length, title;
-    if(sp.kind==="s") title="shift "+sp.cell;
-    else if(sp.kind==="r") title="reduce "+sp.cell+"  ("+W_PROD[sp.k].l+" → "+W_PROD[sp.k].r.join(" ")+")";
-    else title=sp.kind==="acc"?"aceitar":"erro de sintaxe";
-    var h='<div style="font-weight:700;font-size:16px;margin:4px 0 8px">Passo '+(wIdx+1)+" de "+N+" · "+esc(title)+"</div>"
-      +'<div><b>Pilha</b> <span class="mut">(fundo à esquerda, topo à direita; números = estados, símbolos = o que já foi lido)</span></div>'+wStackHtml(sp.st,sp.sy,{top:true})
-      +"<div><b>Entrada que ainda falta</b></div>"+wInput(sp.rest)+wExplain(sp);
+    var sp=wRes.steps[wIdx], N=wRes.steps.length, badge;
+    if(sp.kind==="s") badge='<span class="wb wb-s">SHIFT · '+esc(sp.cell)+"</span>";
+    else if(sp.kind==="r") badge='<span class="wb wb-r">REDUCE · '+esc(sp.cell)+" ("+esc(W_PROD[sp.k].l+" → "+W_PROD[sp.k].r.join(" "))+")</span>";
+    else if(sp.kind==="acc") badge='<span class="wb wb-a">ACEITA</span>';
+    else badge='<span class="wb wb-e">ERRO DE SINTAXE</span>';
+    document.getElementById("lrw-top").innerHTML=
+      '<div class="wh"><span>Passo '+(wIdx+1)+" de "+N+"</span>"+badge+"</div>"
+      +'<div class="wsum"><b>O que aconteceu:</b> '+wSummary(sp)+"</div>"
+      +"<div><b>Pilha agora</b> "+'<span class="mut">(fundo à esquerda, topo à direita; números = estados, símbolos = o que já foi lido)</span></div>'
+      +wStackHtml(sp.st,sp.sy,{top:true,label:"← topo (azul forte) = linha"})
+      +"<div><b>Entrada que ainda falta</b></div>"+wInput(sp.rest);
+    var b="";
+    if(sp.st2) b+="<div><b>Pilha depois deste passo</b> "+'<span class="mut">(o que entrou aparece em verde)</span></div>'+wStackHtml(sp.st2,sp.sy2,{nw:2});
+    b+='<details class="q" open><summary>Explicação detalhada deste passo</summary><div>'+wExplain(sp)+"</div></details>";
     if(wIdx===N-1){
       if(wRes.ok){
         var d=wDerivation(wRes.steps);
-        h+='<div class="ok"><b>Resultado: palavra aceita</b><p>As reduções feitas, lidas de trás para frente, formam a derivação mais à direita da palavra:</p>'+(d?'<pre style="margin:6px 0 0"><code>'+esc(d.join("\n⇒ "))+"</code></pre>":"")+"</div>";
-      } else h+='<div class="warn"><b>Resultado: palavra rejeitada</b><p>A tabela não tem ação para esse token nesse estado.</p></div>';
+        b+='<div class="ok"><b>Resultado: palavra aceita</b><p>As reduções feitas, lidas de trás para frente, formam a derivação mais à direita da palavra:</p>'+(d?'<pre style="margin:6px 0 0"><code>'+esc(d.join("\n⇒ "))+"</code></pre>":"")+"</div>";
+      } else b+='<div class="warn"><b>Resultado: palavra rejeitada</b><p>A tabela não tem ação para esse token nesse estado.</p></div>';
     }
-    document.getElementById("lrw-panel").innerHTML=h;
+    document.getElementById("lrw-bottom").innerHTML=b;
     wHl(sp); wButtons();
   }
+  function wStop(){
+    if(wTimer){clearInterval(wTimer);wTimer=null;}
+    document.getElementById("lrw-play").textContent="▶ Reproduzir sozinho";
+  }
+  function wPlay(){
+    if(wTimer){wStop();return;}
+    if(!wRes) return;
+    if(wIdx>=wRes.steps.length-1){wIdx=0;wRender();}
+    document.getElementById("lrw-play").textContent="⏸ Pausar";
+    wTimer=setInterval(function(){
+      if(wIdx>=wRes.steps.length-1){wStop();return;}
+      wIdx++; wRender();
+      if(wIdx>=wRes.steps.length-1) wStop();
+    },4500);
+  }
   function wLoad(){
+    wStop();
     var toks=document.getElementById("lrw-in").value.trim().split(/\s+/).filter(Boolean);
     var bad=toks.filter(function(t){return W_COLS.indexOf(t)<0||t==="$";});
     if(bad.length){
       wRes=null; wIdx=0;
-      document.getElementById("lrw-panel").innerHTML='<div class="warn"><b>Palavra inválida</b><p>“'+esc(bad[0])+'” não é um token desta tabela. Use <code>id + * ( )</code>, separados por espaços.</p></div>';
+      document.getElementById("lrw-top").innerHTML='<div class="warn"><b>Palavra inválida</b><p>“'+esc(bad[0])+'” não é um token desta tabela. Use <code>id + * ( )</code>, separados por espaços.</p></div>';
+      document.getElementById("lrw-bottom").innerHTML="";
       document.getElementById("lrw-hist").innerHTML="";
       wButtons(); return;
     }
@@ -2712,16 +2818,27 @@ I5:  S  → ( S ) ·                      (reduzir pela 1)</code></pre>
     wRender();
   }
   wBuildTable();
+  document.getElementById("lrw-show").addEventListener("click",function(){
+    document.getElementById("lrw-start").hidden=true;
+    var pl=document.getElementById("lrw-player"); pl.hidden=false;
+    wLoad();
+    pl.scrollIntoView({behavior:"smooth",block:"start"});
+  });
+  document.getElementById("lrw-hide").addEventListener("click",function(){
+    wStop();
+    document.getElementById("lrw-player").hidden=true;
+    document.getElementById("lrw-start").hidden=false;
+  });
   document.getElementById("lrw-load").addEventListener("click",wLoad);
   document.getElementById("lrw-in").addEventListener("keydown",function(e){if(e.key==="Enter") wLoad();});
   [].forEach.call(document.querySelectorAll("#tool-lrw [data-w]"),function(b){
     b.addEventListener("click",function(){document.getElementById("lrw-in").value=b.getAttribute("data-w"); wLoad();});
   });
-  document.getElementById("lrw-first").addEventListener("click",function(){if(wRes){wIdx=0;wRender();}});
-  document.getElementById("lrw-prev").addEventListener("click",function(){if(wRes&&wIdx>0){wIdx--;wRender();}});
-  document.getElementById("lrw-next").addEventListener("click",function(){if(wRes&&wIdx<wRes.steps.length-1){wIdx++;wRender();}});
-  document.getElementById("lrw-last").addEventListener("click",function(){if(wRes){wIdx=wRes.steps.length-1;wRender();}});
-  wLoad();
+  document.getElementById("lrw-first").addEventListener("click",function(){wStop(); if(wRes){wIdx=0;wRender();}});
+  document.getElementById("lrw-prev").addEventListener("click",function(){wStop(); if(wRes&&wIdx>0){wIdx--;wRender();}});
+  document.getElementById("lrw-next").addEventListener("click",function(){wStop(); if(wRes&&wIdx<wRes.steps.length-1){wIdx++;wRender();}});
+  document.getElementById("lrw-last").addEventListener("click",function(){wStop(); if(wRes){wIdx=wRes.steps.length-1;wRender();}});
+  document.getElementById("lrw-play").addEventListener("click",wPlay);
 })();
 </script>
 </body>
