@@ -113,6 +113,16 @@ button.b:disabled{opacity:.45;cursor:default}
 table.lrt th,table.lrt td{text-align:center;font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:14px;padding:5px 9px}
 table.lrt .sep{border-left:3px solid var(--accent)}
 table.lrt td.cf{background:var(--warn-soft);color:var(--warn);font-weight:700}
+table.lrt td.hl-a{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent);color:var(--accent);font-weight:700}
+table.lrt td.hl-g{background:var(--warn-soft);box-shadow:inset 0 0 0 2px var(--warn);color:var(--warn);font-weight:700}
+.stk{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:6px 0 10px}
+.sb{display:inline-block;min-width:32px;text-align:center;padding:3px 9px;border-radius:7px;font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.sb.st{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700;border-radius:4px}
+.sb.cur{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+.sb.top{box-shadow:0 0 0 2px var(--accent)}
+.sb.pop{text-decoration:line-through;border-color:var(--warn);background:var(--warn-soft);color:var(--warn)}
+.sb.new{border-color:var(--ok);background:var(--ok-soft);color:var(--ok);font-weight:700}
+.mut{font-size:12.5px;color:var(--muted);margin-left:6px}
 dl.gl dt{font-weight:700;margin-top:10px}
 dl.gl dd{margin:0 0 0 0;color:var(--ink)}
 footer{margin-top:60px;color:var(--muted);font-size:13.5px;border-top:1px solid var(--line);padding-top:14px}
@@ -1542,7 +1552,7 @@ Por REFERÊNCIA:  formais são o próprio x e y.  Depois:       x = 2,  y = 1   
   <h2>Análise sintática ascendente (LR) e a tabela ação/desvio</h2>
   <p class="src">Este assunto <b>não está no zip</b>: foi acrescentado a pedido. O conteúdo segue o que os livros-texto de compiladores ensinam (por exemplo, o “livro do dragão”). Confira a notação com o material do seu professor, porque a forma de escrever a pilha e a tabela varia um pouco de uma fonte para outra.</p>
   <div class="mini"><b>Nesta aula</b>
-    <ol><li>Onde o parser entra e o que “bottom-up” quer dizer</li><li>Shift, reduce e o handle</li><li>Itens LR e o autômato de estados</li><li>A tabela ação/desvio (como montar)</li><li>Como o parser usa a tabela (passo a passo)</li><li>SLR, LALR, LR(1) e os conflitos</li></ol></div>
+    <ol><li>Onde o parser entra e o que “bottom-up” quer dizer</li><li>Shift, reduce e o handle</li><li>Itens LR e o autômato de estados</li><li>A tabela ação/desvio (como montar)</li><li>Como o parser usa a tabela (passo a passo)</li><li>Passo a passo guiado de um exemplo completo, <code>( ( id ) )</code></li><li>SLR, LALR, LR(1) e os conflitos</li></ol></div>
 
   <h3>6.1 Onde o parser entra e o que “bottom-up” quer dizer</h3>
   <div class="flow">
@@ -1689,7 +1699,76 @@ I4:  E → E + id ·      (item completo: reduzir pela produção 1)</code></pre
       <li>Algumas fontes guardam <b>só os estados</b> na pilha. É equivalente: o símbolo de cada par é sempre o que leva ao estado seguinte.</li>
     </ul></div>
 
-  <h3>6.6 SLR, LALR, LR(1) e os conflitos</h3>
+  <h3>6.6 Passo a passo guiado: reconhecendo <code>( ( id ) )</code></h3>
+  <p>Esta é a parte que mais confunde, então vamos fazer <b>um exemplo inteiro, bem devagar</b>, com a tabela clássica de expressões (12 estados), a mesma das listas de sintática e de provas. Primeiro a gramática, <b>numerada</b> (o número da regra é o K do <code>rK</code>). Ao lado, o tamanho do lado direito, que diz <b>quantos pares saem da pilha</b> numa redução:</p>
+<pre><code>(1)  E → E + T        lado direito com 3 símbolos
+(2)  E → T            lado direito com 1 símbolo
+(3)  T → T * F        lado direito com 3 símbolos
+(4)  T → F            lado direito com 1 símbolo
+(5)  F → ( E )        lado direito com 3 símbolos
+(6)  F → id           lado direito com 1 símbolo</code></pre>
+  <div class="note"><b>Os “andares” da gramática</b>
+    <p>F (fator: um <code>id</code> ou algo entre parênteses) é o andar de baixo. T (termo: multiplicações) fica acima. E (expressão: somas) fica no topo. Um <code>id</code> nasce como F e, se a tabela mandar, sobe para T e depois para E. Isso explica por que você verá reduções em sequência.</p></div>
+  <div class="idea"><b>Em TODO passo você faz só três perguntas</b>
+    <ol class="steps" style="margin:6px 0 0">
+      <li><b>Qual é o estado no topo da pilha?</b> É o último número da pilha.</li>
+      <li><b>Qual é o próximo token?</b> É o primeiro da entrada que ainda falta.</li>
+      <li><b>O que está escrito na tabela</b>, na linha desse estado e na coluna desse token?</li>
+    </ol>
+    <p style="margin-top:8px">E então obedece: <code>sN</code> → empilha o token e depois o número N. <code>rK</code> → desempilha 2 × (tamanho do lado direito) itens, olha o novo topo, empilha o lado esquerdo e depois o número do DESVIO. <code>acc</code> → terminou, aceita. Célula vazia → erro.</p></div>
+  <p><b>Como ler a pilha:</b> da esquerda (fundo) para a direita (topo). Os <b>números</b> são estados, e os <b>símbolos</b> (<code>(</code>, <code>E</code>, <code>id</code>…) são o que já foi lido. Ela sempre alterna: estado, símbolo, estado, símbolo… e <b>termina em estado</b>.</p>
+
+  <div class="tool" id="tool-lrw">
+    <h4>Simulador 8: passo a passo guiado com a tabela de 12 estados</h4>
+    <p style="font-size:14.5px;margin:0 0 6px">Aperte <b>Próximo</b> e acompanhe. Em cada passo o simulador explica <b>o que olhou, o que a célula manda e o que muda na pilha</b>. Na tabela, a célula de <b style="color:var(--accent)">AÇÃO</b> consultada fica em azul e a de <b style="color:var(--warn)">DESVIO</b> em laranja. Na pilha, o que vai <b style="color:var(--warn)">sair</b> aparece riscado e o que <b style="color:var(--ok)">entra</b> em verde.</p>
+    <label for="lrw-in">Palavra (tokens separados por espaços; use <code>id + * ( )</code>)</label>
+    <input id="lrw-in" value="( ( id ) )">
+    <div class="bar" style="margin-top:8px">
+      <button class="b" id="lrw-load" type="button">Carregar</button>
+      <button class="b" type="button" data-w="( ( id ) )">( ( id ) )</button>
+      <button class="b" type="button" data-w="id * id">id * id</button>
+      <button class="b" type="button" data-w="id * id + id">id * id + id</button>
+      <button class="b" type="button" data-w="( id ) * id">( id ) * id</button>
+      <button class="b" type="button" data-w="id + * id">id + * id (erro)</button>
+    </div>
+    <div class="bar">
+      <button class="b" id="lrw-first" type="button">⏮ Início</button>
+      <button class="b" id="lrw-prev" type="button">◀ Voltar</button>
+      <button class="b" id="lrw-next" type="button">Próximo ▶</button>
+      <button class="b" id="lrw-last" type="button">Fim ⏭</button>
+    </div>
+    <div class="out" id="lrw-panel"></div>
+    <h4 style="margin-top:16px">A tabela (de onde saem as respostas)</h4>
+    <div class="tw"><table class="lrt" id="lrw-table"></table></div>
+    <details class="q"><summary>Ver o histórico completo numa tabela só</summary><div id="lrw-hist"></div></details>
+  </div>
+
+  <div class="idea"><b>O que repete em <code>( ( id ) )</code> (e vale para qualquer entrada)</b>
+    <ul style="margin:6px 0 0">
+      <li><b>Shift consome token, reduce nunca.</b> Repare que a entrada fica igual nos passos 4, 5 e 6 (só reduções), e igual de novo em 8, 9 e 10.</li>
+      <li><b>O <code>id</code> sobe os andares:</b> <code>r6</code> (F), <code>r4</code> (T), <code>r2</code> (E). Ele chega a E porque <code>F → ( E )</code> exige um E dentro dos parênteses.</li>
+      <li><b>Cada <code>)</code> faz um shift (<code>s11</code>) e logo depois um <code>r5</code>:</b> a regra tem 3 símbolos, então saem <b>3 pares</b> (<code>( E )</code>) e entra um F.</li>
+      <li>O estado que aparece depois de desempilhar decide o desvio. Por isso o mesmo <code>F</code> leva a 3 quando o topo é 4 ou 0, mas leva a 10 quando o topo é 7.</li>
+      <li>Fim: pilha <code>0 E 1</code>, entrada <code>$</code>, célula <code>acc</code>.</li>
+    </ul></div>
+
+  <div class="try"><b class="t">Treine 6.C</b>
+    <p>Sem olhar o simulador, faça no papel a análise de <code>id * id</code> com a tabela de 12 estados. Dica: quando o topo for o estado 2 e o token for <code>*</code>, o que a tabela manda? Depois confira carregando a palavra no Simulador 8.</p>
+    <details class="q"><summary>Ver resposta</summary><div>
+<pre><code>pilha                  entrada      consulta       ação
+0                      id * id $    [0, id] = s5   shift id
+0 id 5                 * id $       [5, *]  = r6   F → id: tira 1 par; topo 0; desvio[0,F] = 3
+0 F 3                  * id $       [3, *]  = r4   T → F:  tira 1 par; topo 0; desvio[0,T] = 2
+0 T 2                  * id $       [2, *]  = s7   shift *
+0 T 2 * 7              id $         [7, id] = s5   shift id
+0 T 2 * 7 id 5         $            [5, $]  = r6   F → id: tira 1 par; topo 7; desvio[7,F] = 10
+0 T 2 * 7 F 10         $            [10, $] = r3   T → T * F: tira 3 pares; topo 0; desvio[0,T] = 2
+0 T 2                  $            [2, $]  = r2   E → T:  tira 1 par; topo 0; desvio[0,E] = 1
+0 E 1                  $            [1, $]  = acc  aceita</code></pre>
+      <p>Na quarta linha a tabela manda <b>shift</b> (<code>s7</code>) e não reduzir T para E. É assim que o parser “sabe” que a multiplicação ainda não terminou e o <code>*</code> tem que ser lido antes de fechar a expressão: a precedência do <code>*</code> está embutida na tabela.</p></div></details>
+  </div>
+
+  <h3>6.7 SLR, LALR, LR(1) e os conflitos</h3>
   <p>Todas as variantes usam o mesmo mecanismo (itens, pilha, shift e reduce). Mudam só <b>em quais colunas</b> o <code>rK</code> de um item completo é escrito:</p>
   <div class="tw"><table>
     <tr><th>Variante</th><th>Onde coloca <code>rK</code></th><th>Nº de estados</th><th>Poder</th><th>Onde aparece</th></tr>
@@ -1775,7 +1854,7 @@ I5:  S  → ( S ) ·                      (reduzir pela 1)</code></pre>
       <p>O erro só aparece depois de reduzir, porque <code>)</code> pertence a FOLLOW(S) e o SLR escreve <code>r2</code> nessa coluna do estado 3. O LR(1) canônico, com lookahead exato, perceberia o erro um passo antes. Em ambos os casos <b>nenhum token inválido é empilhado</b>: o erro é detectado assim que a tabela não oferece ação.</p></div></details>
   </div>
 
-  <h3>6.7 Autoteste</h3>
+  <h3>6.8 Autoteste</h3>
   <div class="bar"><button class="b" data-toggle="s6">Abrir/fechar todas</button></div>
   <div id="s6-cards">
     <details class="q"><summary>O que significam as letras de “LR”?</summary><div><p>O primeiro L é de ler a entrada da esquerda para a direita; o R é de derivação mais à <b>direita</b>, construída ao contrário (bottom-up).</p></div></details>
@@ -1798,6 +1877,7 @@ I5:  S  → ( S ) ·                      (reduzir pela 1)</code></pre>
     <li><input type="checkbox" id="c-s6-3"><label for="c-s6-3">Preencher a tabela ação/desvio (SLR) com FOLLOW</label></li>
     <li><input type="checkbox" id="c-s6-4"><label for="c-s6-4">Analisar uma entrada mostrando a pilha de pares e cada ação</label></li>
     <li><input type="checkbox" id="c-s6-5"><label for="c-s6-5">Reconhecer e resolver conflitos shift/reduce e reduce/reduce</label></li>
+    <li><input type="checkbox" id="c-s6-6"><label for="c-s6-6">Analisar <code>( ( id ) )</code> com a tabela de 12 estados, explicando cada passo</label></li>
   </ul>
 </section>
 
@@ -2467,6 +2547,181 @@ I5:  S  → ( S ) ·                      (reduzir pela 1)</code></pre>
     document.getElementById("lr-g").value=p.g; document.getElementById("lr-in").value=p.inp; runLR();
   });
   runLR();
+
+  /* =====================================================
+     Simulador 8: passo a passo guiado (tabela de 12 estados)
+     ===================================================== */
+  var W_COLS=["id","+","*","(",")","$"], W_NT=["E","T","F"];
+  var W_PROD=[null,
+    {l:"E",r:["E","+","T"],m:"uma soma completa (E + T) vira uma expressão E"},
+    {l:"E",r:["T"],m:"um termo sozinho já é uma expressão"},
+    {l:"T",r:["T","*","F"],m:"uma multiplicação completa (T * F) vira um termo T"},
+    {l:"T",r:["F"],m:"um fator sozinho já é um termo"},
+    {l:"F",r:["(","E",")"],m:"uma expressão entre parênteses vira um fator F"},
+    {l:"F",r:["id"],m:"o identificador id vira um fator F"}
+  ];
+  var W_TAB=[
+    {id:"s5","(":"s4",E:1,T:2,F:3},
+    {"+":"s6",$:"acc"},
+    {"+":"r2","*":"s7",")":"r2",$:"r2"},
+    {"+":"r4","*":"r4",")":"r4",$:"r4"},
+    {id:"s5","(":"s4",E:8,T:2,F:3},
+    {"+":"r6","*":"r6",")":"r6",$:"r6"},
+    {id:"s5","(":"s4",T:9,F:3},
+    {id:"s5","(":"s4",F:10},
+    {"+":"s6",")":"s11"},
+    {"+":"r1","*":"s7",")":"r1",$:"r1"},
+    {"+":"r3","*":"r3",")":"r3",$:"r3"},
+    {"+":"r5","*":"r5",")":"r5",$:"r5"}
+  ];
+  var wRes=null, wIdx=0;
+
+  function wRun(toks){
+    var st=[0], sy=[], inp=toks.concat(["$"]), pos=0, steps=[];
+    for(var n=1;n<=200;n++){
+      var s=st[st.length-1], a=inp[pos], cell=W_TAB[s][a];
+      var sp={n:n,st:st.slice(),sy:sy.slice(),rest:inp.slice(pos),s:s,a:a,cell:cell};
+      steps.push(sp);
+      if(cell===undefined){sp.kind="err";return {steps:steps,ok:false};}
+      if(cell==="acc"){sp.kind="acc";return {steps:steps,ok:true};}
+      if(cell[0]==="s"){
+        sp.kind="s"; sp.to=+cell.slice(1); sy.push(a); st.push(sp.to); pos++;
+      } else {
+        var k=+cell.slice(1), m=W_PROD[k].r.length;
+        sp.kind="r"; sp.k=k;
+        sy.length-=m; st.length-=m;
+        sp.top=st[st.length-1]; sp.g=W_TAB[sp.top][W_PROD[k].l];
+        sy.push(W_PROD[k].l); st.push(sp.g);
+      }
+      sp.st2=st.slice(); sp.sy2=sy.slice();
+    }
+    return {steps:steps,ok:false};
+  }
+  function wStackStr(st,sy){var s=""+st[0]; for(var k=0;k<sy.length;k++) s+=" "+sy[k]+" "+st[k+1]; return s;}
+  function wStackHtml(st,sy,o){
+    o=o||{};
+    var items=[{t:st[0],c:"st"}];
+    for(var i=0;i<sy.length;i++){items.push({t:sy[i],c:"sy"});items.push({t:st[i+1],c:"st"});}
+    var n=items.length, topAt=o.topAt!==undefined?o.topAt:(o.top?n-1:-1);
+    return '<div class="stk">'+items.map(function(it,i){
+      var c="sb "+it.c;
+      if(o.pop&&i>=n-2*o.pop) c+=" pop";
+      if(o.nw&&i>=n-o.nw) c+=" new";
+      if(i===topAt) c+=" top";
+      return '<span class="'+c+'">'+esc(it.t)+"</span>";
+    }).join("")+(o.pop?"":'<span class="mut">← topo</span>')+"</div>";
+  }
+  function wInput(rest){
+    return '<div class="stk">'+rest.map(function(t,i){return '<span class="sb'+(i===0?" cur":"")+'">'+esc(t)+"</span>";}).join("")+'<span class="mut">← o próximo token está em azul</span></div>';
+  }
+  function wExplain(sp){
+    var h='<ol class="steps">';
+    h+='<li><b>Estado no topo da pilha:</b> <code>'+sp.s+'</code> (o último número da pilha).</li>';
+    h+='<li><b>Token atual:</b> <code>'+esc(sp.a)+'</code> (o primeiro da entrada'+(sp.a==="$"?", o marcador de fim":"")+').</li>';
+    h+='<li><b>Consulto a tabela:</b> linha <code>'+sp.s+'</code>, coluna <code>'+esc(sp.a)+'</code>, parte AÇÃO (azul) → '+(sp.cell===undefined?"<b>célula vazia</b>":"<b><code>"+sp.cell+"</code></b>")+".</li>";
+    if(sp.kind==="s"){
+      h+='<li><b><code>'+sp.cell+'</code> = shift (empilhar):</b> pego o token <code>'+esc(sp.a)+'</code> da entrada e coloco na pilha; logo depois coloco o número <code>'+sp.to+'</code> (o novo estado). A entrada anda um token. <i>Por quê?</i> Ainda não dá para juntar nada, então só guardo o token e continuo lendo.'+wStackHtml(sp.st2,sp.sy2,{nw:2})+"</li>";
+    } else if(sp.kind==="r"){
+      var p=W_PROD[sp.k], m=p.r.length, rhs=m?p.r.join(" "):"ε", plural=m===1?"":"s";
+      h+='<li><b><code>'+sp.cell+'</code> = reduce (reduzir) pela regra '+sp.k+', <code>'+esc(p.l+" → "+rhs)+'</code>:</b> o lado direito (<code>'+esc(rhs)+'</code>) está no topo da pilha e vou trocá-lo pelo lado esquerdo (<code>'+esc(p.l)+'</code>). <i>Significado:</i> '+esc(p.m)+".</li>";
+      h+='<li><b>Desempilho:</b> o lado direito tem <b>'+m+'</b> símbolo'+plural+', então saem <b>'+m+' par'+(m===1?"":"es")+'</b> (símbolo + estado) do topo. Os que saem aparecem riscados, e o novo topo fica destacado:'+wStackHtml(sp.st,sp.sy,{pop:m,topAt:(1+2*sp.sy.length)-2*m-1})+"</li>";
+      h+='<li><b>Novo topo:</b> o estado que sobrou é <code>'+sp.top+'</code>. Consulto a tabela na linha <code>'+sp.top+'</code>, coluna <code>'+esc(p.l)+'</code>, mas agora na parte <b>DESVIO</b> (laranja) → <code>'+sp.g+'</code>.</li>';
+      h+='<li><b>Empilho</b> <code>'+esc(p.l)+'</code> e depois <code>'+sp.g+'</code> (em verde). A entrada <b>não anda</b>: reduzir não consome token.'+wStackHtml(sp.st2,sp.sy2,{nw:2})+"</li>";
+    } else if(sp.kind==="acc"){
+      h+='<li><b><code>acc</code> = aceitar:</b> o token atual é <code>$</code> (fim da entrada) e a pilha tem só o símbolo inicial <code>E</code> com o estado <code>1</code>. Tudo foi reduzido até o começo, então a palavra <b>pertence à linguagem</b>.</li>';
+    } else {
+      var ok=Object.keys(W_TAB[sp.s]).filter(function(k){return W_COLS.indexOf(k)>=0;}).map(function(k){return k==="$"?"$ (fim)":k;});
+      h+='<li><b>Célula vazia = erro de sintaxe.</b> A tabela não prevê o token <code>'+esc(sp.a)+'</code> no estado <code>'+sp.s+'</code>. Aqui o parser só aceitaria: <code>'+esc(ok.join("  "))+'</code>. A análise para.</li>';
+    }
+    return h+"</ol>";
+  }
+  function wDerivation(steps){
+    var reds=steps.filter(function(s){return s.kind==="r";}).map(function(s){return s.k;}).reverse();
+    var form=["E"], out=[form.join(" ")];
+    for(var i=0;i<reds.length;i++){
+      var p=W_PROD[reds[i]], idx=-1;
+      for(var j=form.length-1;j>=0;j--){if(W_NT.indexOf(form[j])>=0){idx=j;break;}}
+      if(idx<0||form[idx]!==p.l) return null;
+      form=form.slice(0,idx).concat(p.r,form.slice(idx+1));
+      out.push(form.join(" "));
+    }
+    return out;
+  }
+  function wBuildTable(){
+    var h='<tr><th rowspan="2">Estado</th><th colspan="6">AÇÃO</th><th colspan="3" class="sep">DESVIO</th></tr><tr>'
+      +W_COLS.map(function(c){return "<th>"+esc(c)+"</th>";}).join("")
+      +W_NT.map(function(c,i){return "<th"+(i===0?' class="sep"':"")+">"+c+"</th>";}).join("")+"</tr>";
+    W_TAB.forEach(function(row,s){
+      h+='<tr><td id="lrw-s'+s+'"><b>'+s+"</b></td>";
+      W_COLS.forEach(function(c,j){h+='<td id="lrw-'+s+"-"+j+'">'+esc(row[c]===undefined?"":row[c])+"</td>";});
+      W_NT.forEach(function(c,j){h+='<td id="lrw-'+s+"-"+(6+j)+'"'+(j===0?' class="sep"':"")+">"+(row[c]===undefined?"":row[c])+"</td>";});
+      h+="</tr>";
+    });
+    document.getElementById("lrw-table").innerHTML=h;
+  }
+  function wHl(sp){
+    [].forEach.call(document.querySelectorAll("#lrw-table .hl-a,#lrw-table .hl-g"),function(e){e.classList.remove("hl-a","hl-g");});
+    function mark(id,c){var e=document.getElementById(id); if(e) e.classList.add(c);}
+    mark("lrw-"+sp.s+"-"+W_COLS.indexOf(sp.a),"hl-a"); mark("lrw-s"+sp.s,"hl-a");
+    if(sp.kind==="r"){mark("lrw-"+sp.top+"-"+(6+W_NT.indexOf(W_PROD[sp.k].l)),"hl-g"); mark("lrw-s"+sp.top,"hl-g");}
+  }
+  function wHist(){
+    var h='<div class="tw"><table><tr><th>#</th><th>Pilha</th><th>Entrada</th><th>Consulta</th><th>O que fez</th></tr>';
+    wRes.steps.forEach(function(sp){
+      var what;
+      if(sp.kind==="s") what="shift: empilha "+sp.a+" e "+sp.to;
+      else if(sp.kind==="r"){var p=W_PROD[sp.k]; what="reduce "+sp.cell+" ("+p.l+" → "+p.r.join(" ")+"): desempilha "+p.r.length+" par(es); topo "+sp.top+"; desvio = "+sp.g;}
+      else what=sp.kind==="acc"?"aceita":"erro de sintaxe";
+      h+="<tr><td>"+sp.n+"</td><td><code>"+esc(wStackStr(sp.st,sp.sy))+"</code></td><td><code>"+esc(sp.rest.join(" "))+"</code></td><td><code>["+sp.s+", "+esc(sp.a)+"] = "+(sp.cell===undefined?"vazio":sp.cell)+"</code></td><td>"+esc(what)+"</td></tr>";
+    });
+    return h+"</table></div>";
+  }
+  function wButtons(){
+    var N=wRes?wRes.steps.length:0;
+    document.getElementById("lrw-first").disabled=document.getElementById("lrw-prev").disabled=!wRes||wIdx===0;
+    document.getElementById("lrw-next").disabled=document.getElementById("lrw-last").disabled=!wRes||wIdx>=N-1;
+  }
+  function wRender(){
+    var sp=wRes.steps[wIdx], N=wRes.steps.length, title;
+    if(sp.kind==="s") title="shift "+sp.cell;
+    else if(sp.kind==="r") title="reduce "+sp.cell+"  ("+W_PROD[sp.k].l+" → "+W_PROD[sp.k].r.join(" ")+")";
+    else title=sp.kind==="acc"?"aceitar":"erro de sintaxe";
+    var h='<div style="font-weight:700;font-size:16px;margin:4px 0 8px">Passo '+(wIdx+1)+" de "+N+" · "+esc(title)+"</div>"
+      +'<div><b>Pilha</b> <span class="mut">(fundo à esquerda, topo à direita; números = estados, símbolos = o que já foi lido)</span></div>'+wStackHtml(sp.st,sp.sy,{top:true})
+      +"<div><b>Entrada que ainda falta</b></div>"+wInput(sp.rest)+wExplain(sp);
+    if(wIdx===N-1){
+      if(wRes.ok){
+        var d=wDerivation(wRes.steps);
+        h+='<div class="ok"><b>Resultado: palavra aceita</b><p>As reduções feitas, lidas de trás para frente, formam a derivação mais à direita da palavra:</p>'+(d?'<pre style="margin:6px 0 0"><code>'+esc(d.join("\n⇒ "))+"</code></pre>":"")+"</div>";
+      } else h+='<div class="warn"><b>Resultado: palavra rejeitada</b><p>A tabela não tem ação para esse token nesse estado.</p></div>';
+    }
+    document.getElementById("lrw-panel").innerHTML=h;
+    wHl(sp); wButtons();
+  }
+  function wLoad(){
+    var toks=document.getElementById("lrw-in").value.trim().split(/\s+/).filter(Boolean);
+    var bad=toks.filter(function(t){return W_COLS.indexOf(t)<0||t==="$";});
+    if(bad.length){
+      wRes=null; wIdx=0;
+      document.getElementById("lrw-panel").innerHTML='<div class="warn"><b>Palavra inválida</b><p>“'+esc(bad[0])+'” não é um token desta tabela. Use <code>id + * ( )</code>, separados por espaços.</p></div>';
+      document.getElementById("lrw-hist").innerHTML="";
+      wButtons(); return;
+    }
+    wRes=wRun(toks); wIdx=0;
+    document.getElementById("lrw-hist").innerHTML=wHist();
+    wRender();
+  }
+  wBuildTable();
+  document.getElementById("lrw-load").addEventListener("click",wLoad);
+  document.getElementById("lrw-in").addEventListener("keydown",function(e){if(e.key==="Enter") wLoad();});
+  [].forEach.call(document.querySelectorAll("#tool-lrw [data-w]"),function(b){
+    b.addEventListener("click",function(){document.getElementById("lrw-in").value=b.getAttribute("data-w"); wLoad();});
+  });
+  document.getElementById("lrw-first").addEventListener("click",function(){if(wRes){wIdx=0;wRender();}});
+  document.getElementById("lrw-prev").addEventListener("click",function(){if(wRes&&wIdx>0){wIdx--;wRender();}});
+  document.getElementById("lrw-next").addEventListener("click",function(){if(wRes&&wIdx<wRes.steps.length-1){wIdx++;wRender();}});
+  document.getElementById("lrw-last").addEventListener("click",function(){if(wRes){wIdx=wRes.steps.length-1;wRender();}});
+  wLoad();
 })();
 </script>
 </body>
